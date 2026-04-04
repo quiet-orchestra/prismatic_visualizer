@@ -693,7 +693,7 @@ fn generate_dimension_lists(settings: &VisualizationSettings) ->  DimensionList{
 }
 
 fn get_point_and_color(base_color: (f32,f32,f32), settings: &VisualizationSettings) -> ([f32;3], P_Color){
-    let (r_gamma,g_gamma,b_gamma) = if settings.gamma_deform {(1.,1.,1.)} else {settings.gamma};
+    let (r_gamma,g_gamma,b_gamma) = settings.gamma;
     let gamma_adjust = 2.2;
     let gamma = [
         (r_gamma/gamma_adjust) as f32,
@@ -719,11 +719,12 @@ fn get_point_and_color(base_color: (f32,f32,f32), settings: &VisualizationSettin
             gamma[2],
         );
 
-    let base_color = if settings.gamma_deform {color} else {raw_color};
+    let base_color = raw_color;
     
     let point: Vec3 = {
         let point = base_color.convert_color(settings.color_space_model).from_space_to_space(settings.color_space, ColorSpace::XYZ);
         let point = if settings.model_mirrored {point.mirror_colorspace()} else {point};
+        let point = if settings.gamma_deform {color.convert_color(settings.color_space_model).from_space_to_space(settings.color_space, ColorSpace::XYZ)} else {point};
         let (x,y,z, _) = point.to_tuple(); 
         Vec3 {x, y, z}
     };

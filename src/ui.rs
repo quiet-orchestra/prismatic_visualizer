@@ -2,13 +2,16 @@ use bevy::{ecs::component::Component, prelude::{ResMut, Resource}, reflect::Refl
 use egui_double_slider::DoubleSlider;
 use prismatic_color::{ColorModel, ColorSpace};
 use bevy_egui::{
-    egui::{self,RichText},EguiContextSettings, EguiContexts, EguiPlugin, EguiPrimaryContextPass, EguiStartupSet,
+    egui::{self}, EguiContexts,
 };
+use crate::ui::egui::Align2;
 
 use crate::visualization::{ColorModelCategory, Dimensionality, VertexShape, RotationDirection, SlicingMethod};
 
 #[derive(Resource, Clone)]
 pub struct VisualizationSettings{
+    pub three_dimension_settings: ThreeDimensionSettings,
+
     pub viz_scale: f32,
     pub visualization_alpha: f32,
 
@@ -105,6 +108,8 @@ pub enum StepType {
 impl Default for VisualizationSettings{
     fn default() -> Self {
         Self {
+            three_dimension_settings: ThreeDimensionSettings::Scale,
+
             viz_scale: 1.,
             visualization_alpha: 1.,
 
@@ -138,164 +143,177 @@ impl Default for VisualizationSettings{
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum ThreeDimensionSettings {
+    Scale,
+    PerceptualOffset,
+    ChannelSettings,
+    ColorModel,
+    ColorSpace,
+    Dimensionality,
+    Info,
+}
+
 pub fn ui_overlay(mut contexts: EguiContexts, mut settings: ResMut<VisualizationSettings>) {
 
     //Create window for variable sliders
-    egui::Window::new("Settings")
-        .resizable(true)
+    egui::TopBottomPanel::top("Settings")
         .show(contexts.ctx_mut().unwrap(), | mut ui|{
 
         let width = ui.available_width();
 
-        ui.label("Scale");
-        ui.add(egui::Slider::new( &mut settings.viz_scale ,0.0..=2.0).text("Visualization Scale"));
-        ui.separator();
-
-        ui.label("Perceptual Offset");
-        ui.add(egui::Slider::new( &mut settings.component_limit.0 ,0.0..=1.0).text("Red"));
-        ui.add(egui::Slider::new( &mut settings.component_limit.1 ,0.0..=1.0).text("Green"));
-        ui.add(egui::Slider::new( &mut settings.component_limit.2 ,0.0..=1.0).text("Blue"));
-
         ui.horizontal(|ui| {
-            ui.label("Gamma");
-            ui.checkbox(&mut settings.per_component_gamma, "per component");
-        });
-        if settings.per_component_gamma {
-            ui.add(egui::Slider::new( &mut settings.gamma.0 ,0.1..=3.0).text("Red"));
-            ui.add(egui::Slider::new( &mut settings.gamma.1 ,0.1..=3.0).text("Green"));
-            ui.add(egui::Slider::new( &mut settings.gamma.2 ,0.1..=3.0).text("Blue"));
-        }
-        else {
-            ui.add(egui::Slider::new( &mut settings.gamma.0 ,0.1..=3.0));
-            settings.gamma.1 = settings.gamma.0;
-            settings.gamma.2 = settings.gamma.0;
-        }
-
-        ui.separator();
-
-        ui.horizontal(|ui| {
-            ui.label("Channel Settings");
+            ui.selectable_value(&mut settings.three_dimension_settings, ThreeDimensionSettings::Scale, "Scale");
+            ui.selectable_value(&mut settings.three_dimension_settings, ThreeDimensionSettings::PerceptualOffset, "Perceptual Offset");
+            ui.selectable_value(&mut settings.three_dimension_settings, ThreeDimensionSettings::ChannelSettings, "Channel Settings");
+            ui.selectable_value(&mut settings.three_dimension_settings, ThreeDimensionSettings::ColorModel, "Color Model");
+            ui.selectable_value(&mut settings.three_dimension_settings, ThreeDimensionSettings::ColorSpace, "Color Space");
+            ui.selectable_value(&mut settings.three_dimension_settings, ThreeDimensionSettings::Dimensionality, "Shape");
+            ui.selectable_value(&mut settings.three_dimension_settings, ThreeDimensionSettings::Info, "Info");
         });
 
-        //Channel A
-        ui_channel(&mut ui, "A", &mut settings.channel_settings.0, width);
-
-        //Channel B
-        ui_channel(&mut ui, "B", &mut settings.channel_settings.1, width);
-
-        //Channel C
-        ui_channel(&mut ui, "C", &mut settings.channel_settings.2, width);
-
-        ui.separator();
-
-        ui.label("Color Model");
-        ui.horizontal(|ui| {
-             egui::ComboBox::from_label("")
-            .selected_text(format!("{:?}", settings.color_space_model))
-            .show_ui(ui, |ui| {
-                 ui.selectable_value(&mut settings.color_model_category, ColorModelCategory::Spherical, "Spherical");
-                ui.selectable_value(&mut settings.color_model_category, ColorModelCategory::Cubic, "Cubic");
-                ui.selectable_value(&mut settings.color_model_category, ColorModelCategory::LumaChroma, "Luma-Chroma");
-            });
-        });
-
-        ui.separator();
-
-        ui.horizontal(|ui| {
-            match settings.color_model_category {
-            ColorModelCategory::Spherical => {
-                ui.selectable_value(&mut settings.color_model, ColorModel::SphericalHCLA, "HCL");
+        match settings.three_dimension_settings {
+            ThreeDimensionSettings::Scale => {
+                ui.add(egui::Slider::new( &mut settings.viz_scale ,0.0..=2.0).text("Visualization Scale"));
             },
-            ColorModelCategory::Cubic => {
-                ui.selectable_value(&mut settings.color_model, ColorModel::CubicHSVA, "HSV");
-                ui.selectable_value(&mut settings.color_model, ColorModel::CubicHSLA, "HSL");
+            ThreeDimensionSettings::PerceptualOffset => {
+                ui.add(egui::Slider::new( &mut settings.component_limit.0 ,0.0..=1.0).text("Red"));
+                ui.add(egui::Slider::new( &mut settings.component_limit.1 ,0.0..=1.0).text("Green"));
+                ui.add(egui::Slider::new( &mut settings.component_limit.2 ,0.0..=1.0).text("Blue"));
+
+                ui.horizontal(|ui| {
+                    ui.label("Gamma");
+                    ui.checkbox(&mut settings.per_component_gamma, "per component");
+                });
+                if settings.per_component_gamma {
+                    ui.add(egui::Slider::new( &mut settings.gamma.0 ,0.1..=3.0).text("Red"));
+                    ui.add(egui::Slider::new( &mut settings.gamma.1 ,0.1..=3.0).text("Green"));
+                    ui.add(egui::Slider::new( &mut settings.gamma.2 ,0.1..=3.0).text("Blue"));
+                }
+                else {
+                    ui.add(egui::Slider::new( &mut settings.gamma.0 ,0.1..=3.0));
+                    settings.gamma.1 = settings.gamma.0;
+                    settings.gamma.2 = settings.gamma.0;
+                }
+                ui.separator();
+                ui.checkbox(&mut settings.gamma_deform, "Gamma Deform");
             },
-            ColorModelCategory::LumaChroma => {
-                ui.selectable_value(&mut settings.color_model, ColorModel::YUVA, "YUV");
+            ThreeDimensionSettings::ChannelSettings => {
+                ui.horizontal(|ui| {
+                    ui.label("Channel Settings");
+                });
+
+                //Channel A
+                ui_channel(&mut ui, "A", &mut settings.channel_settings.0, width);
+
+                //Channel B
+                ui_channel(&mut ui, "B", &mut settings.channel_settings.1, width);
+
+                //Channel C
+                ui_channel(&mut ui, "C", &mut settings.channel_settings.2, width);
             },
-        }});
+            ThreeDimensionSettings::ColorModel => {
+                ui.label("Color Model");
+                ui.horizontal(|ui| {
+                    egui::ComboBox::from_label("")
+                    .selected_text(format!("{:?}", settings.color_space_model))
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(&mut settings.color_model_category, ColorModelCategory::Spherical, "Spherical");
+                        ui.selectable_value(&mut settings.color_model_category, ColorModelCategory::Cubic, "Cubic");
+                        ui.selectable_value(&mut settings.color_model_category, ColorModelCategory::LumaChroma, "Luma-Chroma");
+                    });
+                });
+
+                ui.separator();
+
+                ui.horizontal(|ui| {
+                    match settings.color_model_category {
+                    ColorModelCategory::Spherical => {
+                        ui.selectable_value(&mut settings.color_model, ColorModel::SphericalHCLA, "HCL");
+                    },
+                    ColorModelCategory::Cubic => {
+                        ui.selectable_value(&mut settings.color_model, ColorModel::CubicHSVA, "HSV");
+                        ui.selectable_value(&mut settings.color_model, ColorModel::CubicHSLA, "HSL");
+                    },
+                    ColorModelCategory::LumaChroma => {
+                        ui.selectable_value(&mut settings.color_model, ColorModel::YUVA, "YUV");
+                    },
+                }});
+            },
+            ThreeDimensionSettings::ColorSpace => {
+                let current_color_model = settings.color_model;
+
+                ui.label("Color Space");
+                egui::ComboBox::from_label("")
+                .selected_text(format!("{:?}", settings.color_space_model))
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut settings.color_space_model, current_color_model, "Current Color Model");
+                    ui.selectable_value(&mut settings.color_space_model, ColorModel::RGBA, "RGB");
+                    ui.selectable_value(&mut settings.color_space_model, ColorModel::CMYA, "CMY");
+                    ui.selectable_value(&mut settings.color_space_model, ColorModel::SphericalHCLA, "Spherical HCL");
+                    ui.selectable_value(&mut settings.color_space_model, ColorModel::CubicHSVA, "Cubic HSV");
+                    ui.selectable_value(&mut settings.color_space_model, ColorModel::YUVA, "YUV");
+                });
+
+                ui.horizontal(|ui| {
+                    ui.selectable_value(&mut settings.color_space, ColorSpace::XYZ, "XYZ");
+                    ui.selectable_value(&mut settings.color_space, ColorSpace::Cylindrical, "Cylindrical");
+                });
+
+                ui.horizontal(|ui| {
+
+                    ui.checkbox(&mut settings.model_mirrored, "Mirror");
+
+                });
+            },
+            ThreeDimensionSettings::Dimensionality => {
+                ui.label("Dimensions");
+                ui.horizontal(|ui| {
+                    ui.selectable_value(&mut settings.dimensionality, Dimensionality::Vertex, "Vertex");
+                    ui.selectable_value(&mut settings.dimensionality, Dimensionality::Edge, "Edge");
+                    ui.selectable_value(&mut settings.dimensionality, Dimensionality::Face, "Face");
+                    ui.selectable_value(&mut settings.dimensionality, Dimensionality::Volume, "Volume");
+                });
         
+                match settings.dimensionality {
+                    Dimensionality::Vertex => {
+                        // ui.label("Mesh Shape");
+                        ui.horizontal(|ui| {
+                            ui.add(egui::Slider::new( &mut settings.instance_scale ,0.0..=2.0).text("Shape Scale"));
+                        });
+                    },
+                    Dimensionality::Edge => {
+                        ui.label("Edge Direction");
+                        ui.horizontal(|ui| {
+                            ui.selectable_value(&mut settings.face_slicing, SlicingMethod::Y, "X|Axial");
+                            ui.selectable_value(&mut settings.face_slicing, SlicingMethod::X, "Y|Radial");
+                            ui.selectable_value(&mut settings.face_slicing, SlicingMethod::Z, "Z|Concentric");
+                        });
+                        ui.add(egui::Slider::new( &mut settings.line_width ,0.0..=10.0).text("Line Width"));
+                        ui.checkbox(&mut settings.discrete_color, "Discrete Color");
+                    },
+                    Dimensionality::Face => {
+                        ui.label("Quad Direction");
+                        ui.horizontal(|ui| {
+                            ui.selectable_value(&mut settings.face_slicing, SlicingMethod::X, "X|Axial");
+                            ui.selectable_value(&mut settings.face_slicing, SlicingMethod::Y, "Y|Radial");
+                            ui.selectable_value(&mut settings.face_slicing, SlicingMethod::Z, "Z|Concentric");
+                        });
+                        ui.checkbox(&mut settings.discrete_color, "Discrete Color");
 
-        ui.separator();
-
-        let current_color_model = settings.color_model;
-
-        ui.label("Color Space");
-        egui::ComboBox::from_label("")
-        .selected_text(format!("{:?}", settings.color_space_model))
-        .show_ui(ui, |ui| {
-            ui.selectable_value(&mut settings.color_space_model, current_color_model, "Current Color Model");
-            ui.selectable_value(&mut settings.color_space_model, ColorModel::RGBA, "RGB");
-            ui.selectable_value(&mut settings.color_space_model, ColorModel::CMYA, "CMY");
-            ui.selectable_value(&mut settings.color_space_model, ColorModel::SphericalHCLA, "Spherical HCL");
-            ui.selectable_value(&mut settings.color_space_model, ColorModel::CubicHSVA, "Cubic HSV");
-            ui.selectable_value(&mut settings.color_space_model, ColorModel::YUVA, "YUV");
-        });
-
-        ui.horizontal(|ui| {
-            ui.selectable_value(&mut settings.color_space, ColorSpace::XYZ, "XYZ");
-            ui.selectable_value(&mut settings.color_space, ColorSpace::Cylindrical, "Cylindrical");
-        });
-
-        ui.horizontal(|ui| {
-
-            ui.checkbox(&mut settings.model_mirrored, "Mirror");
-
-        });
-
-        ui.separator();
-
-        ui.label("Shape");
-        ui.horizontal(|ui| {
-            ui.selectable_value(&mut settings.dimensionality, Dimensionality::Vertex, "Vertex");
-            ui.selectable_value(&mut settings.dimensionality, Dimensionality::Edge, "Edge");
-            ui.selectable_value(&mut settings.dimensionality, Dimensionality::Face, "Face");
-            ui.selectable_value(&mut settings.dimensionality, Dimensionality::Volume, "Volume");
-        });
-  
-        match settings.dimensionality {
-            Dimensionality::Vertex => {
-                // ui.label("Mesh Shape");
-                ui.horizontal(|ui| {
-                    ui.add(egui::Slider::new( &mut settings.instance_scale ,0.0..=2.0).text("Shape Scale"));
-                });
-            },
-            Dimensionality::Edge => {
-                ui.label("Edge Direction");
-                ui.horizontal(|ui| {
-                    ui.selectable_value(&mut settings.face_slicing, SlicingMethod::Y, "X|Axial");
-                    ui.selectable_value(&mut settings.face_slicing, SlicingMethod::X, "Y|Radial");
-                    ui.selectable_value(&mut settings.face_slicing, SlicingMethod::Z, "Z|Concentric");
-                    ui.add(egui::Slider::new( &mut settings.line_width ,0.0..=10.0).text("Line Width"));
-                    ui.checkbox(&mut settings.discrete_color, "Discrete Color");
-                });
-            },
-            Dimensionality::Face => {
-                ui.label("Quad Direction");
-                ui.horizontal(|ui| {
-                    ui.selectable_value(&mut settings.face_slicing, SlicingMethod::X, "X|Axial");
-                    ui.selectable_value(&mut settings.face_slicing, SlicingMethod::Y, "Y|Radial");
-                    ui.selectable_value(&mut settings.face_slicing, SlicingMethod::Z, "Z|Concentric");
-                    ui.checkbox(&mut settings.discrete_color, "Discrete Color");
-                });
+                    },
+                    Dimensionality::Volume => {
+                        ui.checkbox(&mut settings.discrete_color, "Discrete Color");
+                    },
+                }
 
             },
-            Dimensionality::Volume => {
-                ui.checkbox(&mut settings.discrete_color, "Discrete Color");
+            ThreeDimensionSettings::Info => {
+                ui.label("WASD - Horizontal Movement");
+                ui.label("Ctrl & Space - Vertical Movement");
+                ui.label("Arrow Keys - Camera Rotation");
             },
         }
-
-        ui.separator();
-
-        // ui.label("Additional Settings");
-
-        ui.checkbox(&mut settings.gamma_deform, "Gamma Deform");
-
-        // ui.separator();
-
-        ui.label("WASD - Horizontal Movement");
-        ui.label("Ctrl & Space - Vertical Movement");
-        ui.label("Arrow Keys - Camera Rotation");
 
     });
 
