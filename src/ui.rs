@@ -2,11 +2,10 @@ use bevy::{ecs::component::Component, prelude::{ResMut, Resource}, reflect::Refl
 use egui_double_slider::DoubleSlider;
 use prismatic_color::{ColorModel, ColorSpace};
 use bevy_egui::{
-    egui::{self}, EguiContexts,
+    EguiContexts, egui::{self, global_theme_preference_buttons, global_theme_preference_switch}
 };
-use crate::ui::egui::Align2;
 
-use crate::visualization::{ColorModelCategory, Dimensionality, VertexShape, RotationDirection, SlicingMethod};
+use crate::visualization::{ColorModelCategory, Dimensionality, SlicingMethod};
 
 #[derive(Resource, Clone)]
 pub struct VisualizationSettings{
@@ -26,7 +25,6 @@ pub struct VisualizationSettings{
     pub color_space: ColorSpace,
     pub dimensionality: Dimensionality,
 
-    pub mesh_shape: VertexShape,
     pub instance_scale: f32,
     pub line_width: f32,
 
@@ -126,8 +124,7 @@ impl Default for VisualizationSettings{
             color_model_category: ColorModelCategory::Spherical,
             color_model: ColorModel::SphericalHCLA,
             dimensionality: Dimensionality::Vertex,
-            
-            mesh_shape: VertexShape::Sphere,
+
             instance_scale: 1.0,
             line_width: 1.0,
 
@@ -144,7 +141,7 @@ impl Default for VisualizationSettings{
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-enum ThreeDimensionSettings {
+pub enum ThreeDimensionSettings {
     Scale,
     PerceptualOffset,
     ChannelSettings,
@@ -314,6 +311,7 @@ pub fn ui_overlay(mut contexts: EguiContexts, mut settings: ResMut<Visualization
                 ui.label("Arrow Keys - Camera Rotation");
             },
         }
+        global_theme_preference_buttons(ui);
 
     });
 

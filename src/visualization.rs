@@ -1,18 +1,18 @@
-use bevy::{color, gizmos::gizmos, render::render_asset::RenderAssetUsages};
+
 use bevy_egui::egui::emath::OrderedFloat;
 use indexmap::IndexMap;
-use prismatic_color::{Color as P_Color, ColorModel, ColorSpace, IntoColor, };
+use prismatic_color::{Color as P_Color, ColorSpace};
 
-use bevy_pointcloud::{point_cloud, PointCloudPlugin};
-use bevy_pointcloud::loader::las::LasLoaderPlugin;
-use bevy_pointcloud::point_cloud::{PointCloud, PointCloud3d, PointCloudData};
-use bevy_pointcloud::point_cloud_material::{PointCloudMaterial, PointCloudMaterial3d};
-use bevy_pointcloud::render::PointCloudRenderMode;
+use bevy_pointcloud::{
+    point_cloud::{PointCloud, PointCloud3d, PointCloudData},
+    point_cloud_material::{PointCloudMaterial, PointCloudMaterial3d},
+};
 
 use bevy::{
     prelude::{*},
     render::render_resource::PrimitiveTopology,
-    render::mesh::Indices,
+    mesh::{Indices},
+    asset::RenderAssetUsages,
 };
 
 use crate::ui::VisualizationSettings;
@@ -22,22 +22,12 @@ use crate::ui::VisualizationSettings;
 pub struct VisualizationMesh;
 
 
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum RotationDirection {
-    None,
-    Clockwise,
-    Counterclockwise,
-}
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ColorModelCategory {
     Spherical,
     Cubic,
     LumaChroma,
 }
-
-
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SlicingMethod {
@@ -88,36 +78,7 @@ impl SlicingMethod {
 
         }
     }
-
-    fn get_vertex_offset(&self) -> [[usize; 3]; 1] {
-        [[0,0,0]]
-    }
-
 }
-
-#[derive(Clone,PartialEq)]
-pub enum VertexShape {
-    Sphere,
-    Cube,
-    Tetrahedron,
-}
-
-impl VertexShape {
-    fn get_shape(&self, scale: f32) -> Mesh {
-        match self {
-            VertexShape::Sphere => Sphere::new(scale).into(),
-            VertexShape::Cube => Cuboid::new(scale,scale,scale).into(),
-            VertexShape::Tetrahedron => Tetrahedron::new(
-                Vec3::new(0.5 * scale, 0.5 * scale, 0.5 * scale),
-                Vec3::new(-0.5 * scale, 0.5 * scale, -0.5 * scale),
-                Vec3::new(-0.5 * scale, -0.5 * scale, 0.5 * scale),
-                Vec3::new(0.5 * scale, -0.5 * scale, -0.5 * scale),
-            ).into()
-        }
-    }
-}
-
-
 
 #[derive(Clone,PartialEq)]
 pub enum Dimensionality {
@@ -253,13 +214,13 @@ impl DimensionList {
 
                 // Build mesh
                 let mut mesh = Mesh::new(
-                    bevy::render::mesh::PrimitiveTopology::TriangleList,
-                    RenderAssetUsages::default(), // or RenderAssetUsages::RENDER_WORLD if you only need rendering
+                    PrimitiveTopology::TriangleList,
+                    RenderAssetUsages::default(),
                 );
                 mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
                 mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
                 mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
-                mesh.insert_indices(bevy::render::mesh::Indices::U32(indices));
+                mesh.insert_indices(Indices::U32(indices));
 
                 // Unlit so vertex colors are shown directly
                 let material = materials.add(StandardMaterial {
@@ -333,13 +294,13 @@ impl DimensionList {
 
                 // Build mesh
                 let mut mesh = Mesh::new(
-                    bevy::render::mesh::PrimitiveTopology::TriangleList,
+                    PrimitiveTopology::TriangleList,
                     RenderAssetUsages::default(), // or RenderAssetUsages::RENDER_WORLD if you only need rendering
                 );
                 mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
                 mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
                 mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
-                mesh.insert_indices(bevy::render::mesh::Indices::U32(indices));
+                mesh.insert_indices(Indices::U32(indices));
 
                 // Unlit so vertex colors are shown directly
                 let material = materials.add(StandardMaterial {

@@ -1,8 +1,10 @@
-//Digital Greenery
+//Quiet Orchestra
 //Prismatic Color Visualizer
 
 use bevy::{prelude::*, render::view::NoIndirectDrawing};
-use bevy_egui::{EguiPlugin, EguiPrimaryContextPass};
+use bevy_egui::{
+    EguiPlugin, EguiPrimaryContextPass,
+};
 
 mod camera;
 use bevy_pointcloud::point_cloud_material::PointCloudMaterial;
