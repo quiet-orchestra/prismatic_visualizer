@@ -713,7 +713,7 @@ pub fn spawn_grid(
         GridCategory::TwoDGrids => {
             gizmos.grid(
                 Isometry3d::from_translation(
-                   Vec3::new(5.0, 5.0, 0.0),
+                   Vec3::new(5.0, 5.0, -0.01),
                 ),
                 UVec2::new(10, 10),
                 Vec2::splat(1.),
@@ -722,7 +722,7 @@ pub fn spawn_grid(
             .outer_edges();
             gizmos.grid(
                 Isometry3d::new(
-                    Vec3::new(5.0, 0.0, 5.0),
+                    Vec3::new(5.0, -0.01, 5.0),
                     Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)
                 ),
                 UVec2::new(10, 10),
@@ -732,7 +732,7 @@ pub fn spawn_grid(
             .outer_edges();
             gizmos.grid(
                 Isometry3d::new(
-                    Vec3::new(0.0, 5.0, 5.0),
+                    Vec3::new(-0.01, 5.0, 5.0),
                     Quat::from_rotation_y(std::f32::consts::FRAC_PI_2)
                 ),
                 UVec2::new(10, 10),
