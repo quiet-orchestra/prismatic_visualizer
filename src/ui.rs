@@ -229,7 +229,7 @@ pub fn ui_overlay(mut contexts: EguiContexts, mut settings: ResMut<Visualization
                     },
                     ColorModelCategory::Cubic => {
                         ui.selectable_value(&mut settings.color_model, ColorModel::CubicHSVA, "HSV");
-                        ui.selectable_value(&mut settings.color_model, ColorModel::CubicHSLA, "HSL");
+                        // ui.selectable_value(&mut settings.color_model, ColorModel::CubicHSLA, "HSL");
                     },
                     ColorModelCategory::LumaChroma => {
                         ui.selectable_value(&mut settings.color_model, ColorModel::YUVA, "YUV");
