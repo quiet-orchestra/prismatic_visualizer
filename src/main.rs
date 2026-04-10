@@ -7,7 +7,6 @@ use bevy_egui::{
 };
 
 mod camera;
-use bevy_pointcloud::point_cloud_material::PointCloudMaterial;
 use camera::camera_controls;
 
 mod ui;
@@ -16,8 +15,12 @@ use ui::{ui_overlay, VisualizationSettings};
 mod visualization;
 use visualization::{spawn_3d_visualization, spawn_grid, VisualizationMesh, SCALE};
 
-use bevy_pointcloud::{render::PointCloudRenderMode, PointCloudPlugin};
-use bevy_pointcloud::point_cloud::{PointCloud};
+use bevy_pointcloud::{
+    render::PointCloudRenderMode, 
+    PointCloudPlugin, 
+    point_cloud::{PointCloud}, 
+    point_cloud_material::PointCloudMaterial
+};
 
 use crate::ui::{ColorChannel, StepType};
 

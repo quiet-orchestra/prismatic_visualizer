@@ -116,7 +116,7 @@ impl DimensionList {
                     .iter()
                     .map(|(vertex_object, _)| {
                         let position: Vec3 =
-                            vertex_object.point.clone().into_vec3() * SCALE * settings.viz_scale;
+                            vertex_object.point.into_vec3() * SCALE * settings.viz_scale;
                         let color = P_Color::from_array(
                             vertex_object.color.map(|x| x.into_inner()),
                             settings.color_model,
@@ -142,7 +142,7 @@ impl DimensionList {
                     });
                     commands.spawn((
                         PointCloud3d(point_cloud),
-                        PointCloudMaterial3d(my_material.clone()),
+                        PointCloudMaterial3d(my_material),
                         VisualizationMesh,
                     )); 
              },
@@ -257,9 +257,7 @@ impl DimensionList {
 
                     let verts = [v1, v2, v3, v4];
 
-                    // Push positions/colors
-
-                    
+                    // Push positions/colors                    
                     let base = positions.len() as u32;
                     for v in &verts {
                         positions.push(v.point.map(|p| p.into_inner() * SCALE * settings.viz_scale));
@@ -345,7 +343,7 @@ impl OrderedArrayIntoColor for [OrderedFloat<f32>; 4] {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct VertexObject {
     pub point: [OrderedFloat<f32>;3],
     pub color: [OrderedFloat<f32>;4],
@@ -391,7 +389,7 @@ pub trait VertexCollection {
             index
         } else {
             let index = self.vertex_registry().len();
-            self.vertex_registry_mut().insert(vertex.clone(), index);
+            self.vertex_registry_mut().insert(*vertex, index);
             index
         }
     }
@@ -508,40 +506,40 @@ pub fn spawn_3d_visualization(
         .render(&mut commands, &mut meshes, &mut materials, &mut point_clouds ,&mut point_cloud_materials, &mut gizmos, settings);
 }
 
-fn wrap_index(index: usize, offset: usize, length: usize) -> usize {
-    let raw = index + offset;
-    return raw % length;
-}
-
-
 fn generate_dimension_lists(settings: &VisualizationSettings) ->  DimensionList{
 
     let yuv_offset = if settings.color_model.is_luma_chroma() {-0.5} else {0.};
     
-    let mut dim_list: DimensionList = 
+    let (mut dim_list, along_grain): (DimensionList, [bool;3]) = 
     match settings.dimensionality {
-        Dimensionality::Vertex => DimensionList::Vertex(VertexList::new()),
-        Dimensionality::Edge => DimensionList::Edge(EdgeList::new()),
-        Dimensionality::Face => DimensionList::Face(FaceList::new()),
-        Dimensionality::Volume => DimensionList::Volume(FaceList::new()),
+        Dimensionality::Vertex => (DimensionList::Vertex(VertexList::new()),
+        [false, false, false]
+        ),
+        Dimensionality::Edge => (DimensionList::Edge(EdgeList::new()),
+        settings.face_slicing.get_edge_offsets()[1].map(|x| x != 0 ),
+        ),
+        Dimensionality::Face => (DimensionList::Face(FaceList::new()),
+        settings.face_slicing.get_edge_offsets()[1].map(|x| x == 0 ),
+        ),
+        Dimensionality::Volume => (DimensionList::Volume(FaceList::new()),
+        [false, false, false]
+        ),
     };
 
 
-    let channel_a_list = settings.channel_settings.0.generate(settings.dimensionality != Dimensionality::Vertex);
-    let channel_b_list = settings.channel_settings.1.generate(settings.dimensionality != Dimensionality::Vertex);
-    let channel_c_list = settings.channel_settings.2.generate(settings.dimensionality != Dimensionality::Vertex);
 
-    for (index_of_a, a) in channel_a_list.iter().enumerate() {
-        if settings.dimensionality != Dimensionality::Vertex && channel_a_list.len() - index_of_a <= 1 {continue};
-        for (index_of_b, b ) in channel_b_list.iter().enumerate() {
-            if settings.dimensionality != Dimensionality::Vertex && channel_b_list.len()  - index_of_b <= 1 {continue};
-            for (index_of_c, c ) in channel_c_list.iter().enumerate() {
-                if settings.dimensionality != Dimensionality::Vertex && channel_c_list.len()  - index_of_c <= 1 {continue};
+    let channel_a = Channel::from_tuple(settings.channel_settings.0.generate_range(along_grain[0]));
+    let channel_b = Channel::from_tuple(settings.channel_settings.1.generate_range(along_grain[1]));
+    let channel_c = Channel::from_tuple(settings.channel_settings.2.generate_range(along_grain[2]));
+
+    for a in 0..channel_a.steps  {
+        for b in 0..channel_b.steps {
+            for c in 0..channel_c.steps {
                     // Generate points of the dimension
                     let color_point_1 = (
-                        a.value,
-                        b.value + yuv_offset,
-                        c.value + yuv_offset,
+                        channel_a.generate_point(a, 0),
+                        channel_b.generate_point(b, 0),
+                        channel_c.generate_point(c, 0),
                     );
                     let point_1 = VertexObject::from_tuple(get_point_and_color(color_point_1, settings));
                     match &mut dim_list {
@@ -550,101 +548,87 @@ fn generate_dimension_lists(settings: &VisualizationSettings) ->  DimensionList{
                         },
                         DimensionList::Edge(edge_list) => {
                             let slice_offset = settings.face_slicing.get_edge_offsets();
-                            let (a2,b2,c2) = (
-                                channel_a_list.get(wrap_index(index_of_a, slice_offset[1][0], channel_a_list.len())).unwrap().value,
-                                channel_b_list.get(wrap_index(index_of_b, slice_offset[1][1], channel_b_list.len())).unwrap().value + yuv_offset,
-                                channel_c_list.get(wrap_index(index_of_c, slice_offset[1][2], channel_c_list.len())).unwrap().value + yuv_offset,
+
+                            let offset_a = slice_offset[1][0];
+                            let offset_b = slice_offset[1][1];
+                            let offset_c = slice_offset[1][2];
+
+                            let color_point_2 = (
+                                channel_a.generate_point(a, offset_a),
+                                channel_b.generate_point(b, offset_b),
+                                channel_c.generate_point(c, offset_c),
                             );
-                            let color_point_2: (f32,f32,f32) = (
-                                a2,
-                                b2,
-                                c2,
-                            );
+
                             let point_2 = VertexObject::from_tuple(get_point_and_color(color_point_2, settings));
                             edge_list.add_edge(point_1, point_2);
                         },
                         DimensionList::Face(face_list) => {
                             let slice_offset = settings.face_slicing.get_face_offsets();
-                            let (a2,b2,c2) = (
-                                channel_a_list.get(wrap_index(index_of_a, slice_offset[1][0], channel_a_list.len())).unwrap().value,
-                                channel_b_list.get(wrap_index(index_of_b, slice_offset[1][1], channel_b_list.len())).unwrap().value + yuv_offset,
-                                channel_c_list.get(wrap_index(index_of_c, slice_offset[1][2], channel_c_list.len())).unwrap().value + yuv_offset,
-                            );
-                            let color_point_2: (f32,f32,f32) = (
-                                a2,
-                                b2,
-                                c2,
-                            );
-                            let point_2 = VertexObject::from_tuple(get_point_and_color(color_point_2, settings));
 
-                            let (a3,b3,c3) = (
-                                channel_a_list.get(wrap_index(index_of_a, slice_offset[2][0], channel_a_list.len())).unwrap().value,
-                                channel_b_list.get(wrap_index(index_of_b, slice_offset[2][1], channel_b_list.len())).unwrap().value + yuv_offset,
-                                channel_c_list.get(wrap_index(index_of_c, slice_offset[2][2], channel_c_list.len())).unwrap().value + yuv_offset,
-                            );
-                            let color_point_3: (f32,f32,f32) = (
-                                a3,
-                                b3,
-                                c3,
-                            );
-                            let point_3 = VertexObject::from_tuple(get_point_and_color(color_point_3, settings));
+                            let points: [VertexObject; 3] = std::array::from_fn(|i| {
+                                let offset_a = slice_offset[i+1][0];
+                                let offset_b = slice_offset[i+1][1];
+                                let offset_c = slice_offset[i+1][2];
 
-                            let (a4,b4,c4) = (
-                                channel_a_list.get(wrap_index(index_of_a, slice_offset[3][0], channel_a_list.len())).unwrap().value,
-                                channel_b_list.get(wrap_index(index_of_b, slice_offset[3][1], channel_b_list.len())).unwrap().value + yuv_offset,
-                                channel_c_list.get(wrap_index(index_of_c, slice_offset[3][2], channel_c_list.len())).unwrap().value + yuv_offset,
-                            );
-                            let color_point_4: (f32,f32,f32) = (
-                                a4,
-                                b4,
-                                c4,
-                            );
-                            let point_4 = VertexObject::from_tuple(get_point_and_color(color_point_4, settings));
+                                let color_point = (
+                                    channel_a.generate_point(a, offset_a),
+                                    channel_b.generate_point(b, offset_b),
+                                    channel_c.generate_point(c, offset_c),
+                                );
+
+                                VertexObject::from_tuple(get_point_and_color(color_point, settings))
+
+                            });
                             
-                            face_list.add_quad(point_1, point_2, point_3, point_4);
+                            face_list.add_quad(point_1, points[0], points[1], points[2]);
                         },
                         DimensionList::Volume(face_list) => {
                             // Check each axis separately
                             // X-min and X-max
-                            if index_of_a == 0 || index_of_a == channel_a_list.len() - 2 {
-                                let slice = SlicingMethod::X;
-                                let offsets = slice.get_face_offsets();
+                            if (a == 0 || a == channel_a.steps - 1) && !(b == channel_b.steps - 1 || c == channel_c.steps - 1) {
+                                let offsets = SlicingMethod::X.get_face_offsets();
                                 let mut verts = Vec::new();
                                 for o in &offsets {
-                                    let ca = channel_a_list.get(wrap_index(index_of_a, o[0], channel_a_list.len())).unwrap().value;
-                                    let cb = channel_b_list.get(wrap_index(index_of_b, o[1], channel_b_list.len())).unwrap().value + yuv_offset;
-                                    let cc = channel_c_list.get(wrap_index(index_of_c, o[2], channel_c_list.len())).unwrap().value + yuv_offset;
-                                    verts.push(VertexObject::from_tuple(get_point_and_color((ca,cb,cc), settings)));
+                                    let color_point = (
+                                        channel_a.generate_point(a, o[0]),
+                                        channel_b.generate_point(b, o[1]),
+                                        channel_c.generate_point(c, o[2]),
+                                    );
+                                    verts.push(VertexObject::from_tuple(get_point_and_color(color_point, settings)));
                                 }
-                                face_list.add_quad(verts[0].clone(), verts[1].clone(), verts[2].clone(), verts[3].clone());
+                                face_list.add_quad(verts[0], verts[1], verts[2], verts[3]);
                             }
 
                             // Y-min and Y-max
-                            if index_of_b == 0 || index_of_b == channel_b_list.len() - 2 {
+                            if (b == 0 || b == channel_b.steps - 1) && !(a == channel_a.steps - 1 || c == channel_c.steps - 1) {
                                 let slice = SlicingMethod::Y;
                                 let offsets = slice.get_face_offsets();
                                 let mut verts = Vec::new();
                                 for o in &offsets {
-                                    let ca = channel_a_list.get(wrap_index(index_of_a, o[0], channel_a_list.len())).unwrap().value;
-                                    let cb = channel_b_list.get(wrap_index(index_of_b, o[1], channel_b_list.len())).unwrap().value + yuv_offset;
-                                    let cc = channel_c_list.get(wrap_index(index_of_c, o[2], channel_c_list.len())).unwrap().value + yuv_offset;
-                                    verts.push(VertexObject::from_tuple(get_point_and_color((ca,cb,cc), settings)));
+                                    let color_point = (
+                                        channel_a.generate_point(a, o[0]),
+                                        channel_b.generate_point(b, o[1]),
+                                        channel_c.generate_point(c, o[2]),
+                                    );
+                                    verts.push(VertexObject::from_tuple(get_point_and_color(color_point, settings)));
                                 }
-                                face_list.add_quad(verts[0].clone(), verts[1].clone(), verts[2].clone(), verts[3].clone());
+                                face_list.add_quad(verts[0], verts[1], verts[2], verts[3]);
                             }
 
                             // Z-min and Z-max
-                            if index_of_c == 0 || index_of_c == channel_c_list.len() - 2 {
+                            if (c == 0 || c == channel_c.steps - 1) && !(b == channel_b.steps - 1 || a == channel_a.steps - 1)  {
                                 let slice = SlicingMethod::Z;
                                 let offsets = slice.get_face_offsets();
                                 let mut verts = Vec::new();
                                 for o in &offsets {
-                                    let ca = channel_a_list.get(wrap_index(index_of_a, o[0], channel_a_list.len())).unwrap().value;
-                                    let cb = channel_b_list.get(wrap_index(index_of_b, o[1], channel_b_list.len())).unwrap().value + yuv_offset;
-                                    let cc = channel_c_list.get(wrap_index(index_of_c, o[2], channel_c_list.len())).unwrap().value + yuv_offset;
-                                    verts.push(VertexObject::from_tuple(get_point_and_color((ca,cb,cc), settings)));
+                                    let color_point = (
+                                        channel_a.generate_point(a, o[0]),
+                                        channel_b.generate_point(b, o[1]),
+                                        channel_c.generate_point(c, o[2]),
+                                    );
+                                    verts.push(VertexObject::from_tuple(get_point_and_color(color_point, settings)));
                                 }
-                                face_list.add_quad(verts[0].clone(), verts[1].clone(), verts[2].clone(), verts[3].clone());
+                                face_list.add_quad(verts[0], verts[1], verts[2], verts[3]);
                             }
                         },
                     }
@@ -655,6 +639,28 @@ fn generate_dimension_lists(settings: &VisualizationSettings) ->  DimensionList{
 
     dim_list
 }
+
+struct Channel{
+    start: f32,
+    steps: usize,
+    step_size: f32,
+}
+
+impl Channel{
+    fn from_tuple (tuple: (f32, usize, f32)) -> Channel{
+        Channel { start: tuple.0, steps: tuple.1, step_size: tuple.2} 
+
+    }
+    fn generate_point (&self, step: usize, offset: usize) -> f32{
+        let mut coordinate = self.start + self.step_size * (step + offset) as f32;
+        while coordinate > 1.0 {
+            coordinate = coordinate - 1.0;
+        }
+        return coordinate;
+    }
+}
+
+
 
 fn get_point_and_color(base_color: (f32,f32,f32), settings: &VisualizationSettings) -> ([f32;3], P_Color){
     let (r_gamma,g_gamma,b_gamma) = settings.gamma;

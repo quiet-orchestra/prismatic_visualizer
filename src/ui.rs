@@ -2,7 +2,7 @@ use bevy::{ecs::component::Component, prelude::{ResMut, Resource}, reflect::Refl
 use egui_double_slider::DoubleSlider;
 use prismatic_color::{ColorModel, ColorSpace};
 use bevy_egui::{
-    EguiContexts, egui::{self, Grid, global_theme_preference_buttons}
+    EguiContexts, egui::{self, global_theme_preference_buttons}
 };
 
 use crate::visualization::{
@@ -63,42 +63,27 @@ impl Default for ColorChannel {
 }
 
 impl ColorChannel {
-    pub fn generate(&self, not_vertex: bool) -> Vec<ChannelIndex> {
+    pub fn generate_range(&self, along_grain: bool) -> (f32, usize, f32) {
 
-        let steps = if not_vertex {self.steps + 1} else {self.steps};
-        
-        let mut values = Vec::new();
+        let mut start = self.start;
+        let mut wrap = false;
 
-        let step_size = self.step_size(steps);
+        match self.step_type {
+                StepType::Forward => {},
+                StepType::Reverse => start = self.end,
+                StepType::Inclusive => wrap = true,
+        };
 
-        let range = 
-            match self.step_type {
-                StepType::Forward => 0..steps,
-                StepType::Reverse => 1..steps+1,
-                StepType::Inclusive => 0..steps,
-            };
 
-        for step in range {
-            let value = self.start + step as f32 * step_size;
-            
-            values.push(ChannelIndex {value});
-        }
-        values
+
+        let steps = if wrap { self.steps + 1 } else { self.steps };
+        let steps = if along_grain { steps - 1 } else { steps };
+
+        let step_size = (self.end - self.start) / (self.steps as f32);
+
+        (start, steps, step_size)
     }
 
-    fn step_size(&self, steps: usize) -> f32 {
-        if self.step_type == StepType::Inclusive {
-            (self.end - self.start) / (steps as f32 - 1.)
-        }
-        else {
-            (self.end - self.start) / (steps as f32)
-        }
-    }
-}
-
-#[derive(Clone, Copy)]
-pub struct ChannelIndex {
-    pub value: f32,
 }
 
 #[derive(Component, Debug, Clone, Reflect, PartialEq)]
