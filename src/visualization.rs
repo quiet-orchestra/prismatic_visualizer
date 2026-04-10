@@ -1,7 +1,7 @@
 
 use bevy_egui::egui::emath::OrderedFloat;
 use indexmap::IndexMap;
-use prismatic_color::{Color as P_Color, ColorSpace};
+use prismatic_color::{Color as P_Color, ColorSpace, constants};
 
 use bevy_pointcloud::{
     point_cloud::{PointCloud, PointCloud3d, PointCloudData},
@@ -9,10 +9,7 @@ use bevy_pointcloud::{
 };
 
 use bevy::{
-    prelude::{*},
-    render::render_resource::PrimitiveTopology,
-    mesh::{Indices},
-    asset::RenderAssetUsages,
+    asset::RenderAssetUsages, math::VectorSpace, mesh::Indices, prelude::*, render::render_resource::PrimitiveTopology
 };
 
 use crate::ui::VisualizationSettings;
@@ -21,6 +18,12 @@ use crate::ui::VisualizationSettings;
 #[derive(Component)]
 pub struct VisualizationMesh;
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum GridCategory {
+    None,
+    TwoDGrids,
+    ThreeDGrid,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ColorModelCategory {
@@ -498,7 +501,8 @@ pub fn spawn_3d_visualization(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut point_clouds: ResMut<Assets<PointCloud>>,
     mut point_cloud_materials: ResMut<Assets<PointCloudMaterial>>,
-    settings: &VisualizationSettings)
+    settings: &VisualizationSettings,
+    )
 {
     generate_dimension_lists(settings)
         .render(&mut commands, &mut meshes, &mut materials, &mut point_clouds ,&mut point_cloud_materials, &mut gizmos, settings);
@@ -546,7 +550,6 @@ fn generate_dimension_lists(settings: &VisualizationSettings) ->  DimensionList{
                         },
                         DimensionList::Edge(edge_list) => {
                             let slice_offset = settings.face_slicing.get_edge_offsets();
-                            // let (a_end, b_end,c_end) = (index_of_a == channel_a_list.len() - 1, index_of_b == channel_b_list.len() - 1,index_of_c == channel_c_list.len() - 1);
                             let (a2,b2,c2) = (
                                 channel_a_list.get(wrap_index(index_of_a, slice_offset[1][0], channel_a_list.len())).unwrap().value,
                                 channel_b_list.get(wrap_index(index_of_b, slice_offset[1][1], channel_b_list.len())).unwrap().value + yuv_offset,
@@ -691,4 +694,58 @@ fn get_point_and_color(base_color: (f32,f32,f32), settings: &VisualizationSettin
     };
 
     (point.into(), color)
+}
+
+
+pub fn spawn_grid(
+    mut gizmos: Gizmos,
+    settings: &VisualizationSettings,
+){
+
+    match settings.grid {
+        GridCategory::None => {},
+        GridCategory::TwoDGrids => {
+            gizmos.grid(
+                Isometry3d::from_translation(
+                   Vec3::new(5.0, 5.0, 0.0),
+                ),
+                UVec2::new(10, 10),
+                Vec2::splat(1.),
+                constants::BLACK.to_bevy_color(),
+            )
+            .outer_edges();
+            gizmos.grid(
+                Isometry3d::new(
+                    Vec3::new(5.0, 0.0, 5.0),
+                    Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)
+                ),
+                UVec2::new(10, 10),
+                Vec2::splat(1.),
+                constants::BLACK.to_bevy_color(),
+            )
+            .outer_edges();
+            gizmos.grid(
+                Isometry3d::new(
+                    Vec3::new(0.0, 5.0, 5.0),
+                    Quat::from_rotation_y(std::f32::consts::FRAC_PI_2)
+                ),
+                UVec2::new(10, 10),
+                Vec2::splat(1.),
+                constants::BLACK.to_bevy_color(),
+            )
+            .outer_edges();
+        },
+        GridCategory::ThreeDGrid => {
+            gizmos.grid_3d(
+                Isometry3d::from_translation(
+                    Vec3::new(5.,5.,5.),
+                ),
+                UVec3::new(10, 10, 10),
+                Vec3::splat(1.0),
+                constants::BLACK.set_alpha(0.5).to_bevy_color(),
+            )
+            .outer_edges();
+        },
+    }
+
 }

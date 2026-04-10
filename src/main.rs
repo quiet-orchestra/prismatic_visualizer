@@ -14,7 +14,7 @@ mod ui;
 use ui::{ui_overlay, VisualizationSettings};
 
 mod visualization;
-use visualization::{spawn_3d_visualization, VisualizationMesh, SCALE};
+use visualization::{spawn_3d_visualization, spawn_grid, VisualizationMesh, SCALE};
 
 use bevy_pointcloud::{render::PointCloudRenderMode, PointCloudPlugin};
 use bevy_pointcloud::point_cloud::{PointCloud};
@@ -34,7 +34,7 @@ fn main() {
         .add_plugins(EguiPlugin::default())
         .add_plugins(PointCloudPlugin)
         .add_systems(Startup, setup)
-        .add_systems(Update, (update_visualization, update_gizmo_config))
+        .add_systems(Update, (update_visualization, update_gizmo_config, update_grid))
         .add_systems(FixedUpdate, camera_controls)
         .add_systems(EguiPrimaryContextPass, ui_overlay)
         .run();
@@ -103,7 +103,15 @@ fn update_visualization(
          }
   
         spawn_3d_visualization(gizmos, commands, meshes, materials, point_clouds, point_cloud_materials, & *visualization_settings);
+        
     }
+ }
+
+ fn update_grid(
+    gizmos: Gizmos,
+    visualization_settings: ResMut<VisualizationSettings>,
+ ){
+    spawn_grid(gizmos, &visualization_settings);
  }
 
 fn update_gizmo_config(

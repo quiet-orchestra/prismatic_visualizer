@@ -2,10 +2,15 @@ use bevy::{ecs::component::Component, prelude::{ResMut, Resource}, reflect::Refl
 use egui_double_slider::DoubleSlider;
 use prismatic_color::{ColorModel, ColorSpace};
 use bevy_egui::{
-    EguiContexts, egui::{self, global_theme_preference_buttons, global_theme_preference_switch}
+    EguiContexts, egui::{self, Grid, global_theme_preference_buttons}
 };
 
-use crate::visualization::{ColorModelCategory, Dimensionality, SlicingMethod};
+use crate::visualization::{
+    ColorModelCategory, 
+    Dimensionality, 
+    SlicingMethod, 
+    GridCategory,
+};
 
 #[derive(Resource, Clone)]
 pub struct VisualizationSettings{
@@ -13,6 +18,7 @@ pub struct VisualizationSettings{
 
     pub viz_scale: f32,
     pub visualization_alpha: f32,
+    pub grid: GridCategory,
 
     pub component_limit: (f32,f32,f32),
     pub per_component_gamma: bool,
@@ -33,7 +39,6 @@ pub struct VisualizationSettings{
     pub discrete_color: bool,
     pub color_space_model: ColorModel,
 
-    // pub model_rotation: RotationDirection,
     pub model_mirrored: bool,
 
 }
@@ -103,6 +108,8 @@ pub enum StepType {
     Inclusive,
 }
 
+
+
 impl Default for VisualizationSettings{
     fn default() -> Self {
         Self {
@@ -110,6 +117,7 @@ impl Default for VisualizationSettings{
 
             viz_scale: 1.,
             visualization_alpha: 1.,
+            grid: GridCategory::None,
 
             component_limit: (1., 1., 1.), 
             per_component_gamma: false,
@@ -172,6 +180,12 @@ pub fn ui_overlay(mut contexts: EguiContexts, mut settings: ResMut<Visualization
         match settings.three_dimension_settings {
             ThreeDimensionSettings::Scale => {
                 ui.add(egui::Slider::new( &mut settings.viz_scale ,0.0..=2.0).text("Visualization Scale"));
+                ui.add(egui::Slider::new( &mut settings.visualization_alpha, 0.0..=1.0).text("Alpha"));
+                ui.horizontal( |ui| {
+                        ui.selectable_value(&mut settings.grid, GridCategory::None, "None");
+                        ui.selectable_value(&mut settings.grid, GridCategory::TwoDGrids, "2D Grids");
+                        // ui.selectable_value(&mut settings.grid, GridCategory::ThreeDGrid, "3D Grid");
+                    });
             },
             ThreeDimensionSettings::PerceptualOffset => {
                 ui.add(egui::Slider::new( &mut settings.component_limit.0 ,0.0..=1.0).text("Red"));
@@ -311,6 +325,8 @@ pub fn ui_overlay(mut contexts: EguiContexts, mut settings: ResMut<Visualization
                 ui.label("Arrow Keys - Camera Rotation");
             },
         }
+
+        ui.separator();
         global_theme_preference_buttons(ui);
 
     });
