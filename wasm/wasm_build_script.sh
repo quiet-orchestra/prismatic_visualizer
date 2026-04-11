@@ -6,7 +6,7 @@ cargo install wasm-opt
 
 export RUSTFLAGS='--cfg=web_sys_unstable_apis --cfg getrandom_backend="wasm_js"' 
 
-cargo clean .
+cargo clean
 cargo build --features webgl --release --target wasm32-unknown-unknown || exit 1
 wasm-bindgen --no-typescript --target web \
     --out-dir ./wasm/ \

@@ -11,8 +11,7 @@ bevy_egui = "0.37.1"
 eframe = "0.34.0"
 egui_double_slider = "0.9.0"
 
-bevy_pointcloud = { git = "https://github.com/rlamarche/bevy_pointcloud.git", branch = "main" }
-
+bevy_pointcloud = { git = "https://github.com/rlamarche/bevy_pointcloud.git", branch = "main", features = ["webgl"] }
 
 bevy_panorbit_camera = { version = "0.30.0", features = ["bevy_egui"] }
 
