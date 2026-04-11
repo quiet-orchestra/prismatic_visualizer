@@ -24,3 +24,7 @@ indexmap = "2.10.0"
 [features]
 webgl = []
 webgpu = []
+
+[profile.release]
+opt-level = 's'
+
