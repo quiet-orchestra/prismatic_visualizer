@@ -39,8 +39,16 @@ pub struct VisualizationSettings{
     pub discrete_color: bool,
     pub color_space_model: ColorModel,
 
-    pub model_mirrored: bool,
+    pub mirrored: bool,
+    pub rotated: RotationChirality,
 
+}
+
+#[derive(Component, Debug, Clone, Reflect, PartialEq)]
+pub enum RotationChirality{
+    None,
+    Left,
+    Right,
 }
 
 #[derive(Component, Debug, Clone, Reflect)]
@@ -128,7 +136,9 @@ impl Default for VisualizationSettings{
             color_space_model: ColorModel::RGBA,
 
             // model_rotation: RotationDirection::None,
-            model_mirrored: false,
+            mirrored: false,
+            rotated: RotationChirality::None,
+
         }
     }
 }
@@ -141,15 +151,17 @@ pub enum ThreeDimensionSettings {
     ColorModel,
     ColorSpace,
     Dimensionality,
-    Info,
+    Controls,
+    Attribution,
 }
 
 pub fn ui_overlay(mut contexts: EguiContexts, mut settings: ResMut<VisualizationSettings>) {
 
     //Create window for variable sliders
     egui::TopBottomPanel::top("Settings")
+        .resizable(true)
         .show(contexts.ctx_mut().unwrap(), | mut ui|{
-
+        egui::Sense::hover();
         let width = ui.available_width();
 
         ui.horizontal(|ui| {
@@ -159,7 +171,8 @@ pub fn ui_overlay(mut contexts: EguiContexts, mut settings: ResMut<Visualization
             ui.selectable_value(&mut settings.three_dimension_settings, ThreeDimensionSettings::ColorModel, "Color Model");
             ui.selectable_value(&mut settings.three_dimension_settings, ThreeDimensionSettings::ColorSpace, "Color Space");
             ui.selectable_value(&mut settings.three_dimension_settings, ThreeDimensionSettings::Dimensionality, "Shape");
-            ui.selectable_value(&mut settings.three_dimension_settings, ThreeDimensionSettings::Info, "Info");
+            ui.selectable_value(&mut settings.three_dimension_settings, ThreeDimensionSettings::Controls, "Controls");
+            ui.selectable_value(&mut settings.three_dimension_settings, ThreeDimensionSettings::Attribution, "Attribution");
         });
 
         match settings.three_dimension_settings {
@@ -257,9 +270,13 @@ pub fn ui_overlay(mut contexts: EguiContexts, mut settings: ResMut<Visualization
                 });
 
                 ui.horizontal(|ui| {
+                    let mirrored = settings.mirrored;
+                    ui.selectable_value( &mut settings.mirrored, !mirrored, "Mirror");
+                    ui.label("Rotate: ");
 
-                    ui.checkbox(&mut settings.model_mirrored, "Mirror");
-
+                    ui.selectable_value(&mut settings.rotated, RotationChirality::Left, "Left");
+                    ui.selectable_value(&mut settings.rotated, RotationChirality::None, "None");
+                    ui.selectable_value(&mut settings.rotated, RotationChirality::Right, "Right");
                 });
             },
             ThreeDimensionSettings::Dimensionality => {
@@ -304,10 +321,44 @@ pub fn ui_overlay(mut contexts: EguiContexts, mut settings: ResMut<Visualization
                 }
 
             },
-            ThreeDimensionSettings::Info => {
-                ui.label("WASD - Horizontal Movement");
-                ui.label("Ctrl & Space - Vertical Movement");
-                ui.label("Arrow Keys - Camera Rotation");
+            ThreeDimensionSettings::Controls => {
+                ui.horizontal(|ui|{
+                    ui.label(
+                        "Mouse:
+•Left - Orbit
+•Right - Pan
+•Scroll - Zoom"
+                    );
+                    ui.label(
+                        "Touch:
+•One Finger - Orbit
+•Two Fingers - Pan
+•Pinch - Zoom"
+                    );
+                    ui.label(
+                        "Keyboard:
+•WASD - Horizontal
+•Ctrl & Space - Vertical
+•Arrow Keys - Pitch and Yaw"
+                    );  
+                });
+
+            },
+            ThreeDimensionSettings::Attribution => {
+                ui.label(
+"
+Prismatic Color Visualizer
+
+Thanks to 
+Bevy - MIT & Apache-2.0 License
+Bevy Panorbit Camera - MIT & Apache-2.0 License
+Egui - MIT & Apache-2.0 License
+Bevy Egui - MIT License
+Egui Double Slider - Apache-2.0 License
+Bevy Pointcloud - MIT License
+
+This application is licensed under MPL2"
+);
             },
         }
 

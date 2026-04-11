@@ -1,7 +1,4 @@
-use bevy::{input::mouse::{MouseButtonInput, MouseMotion}, prelude::{*}};
-
-
-//Need to add default positions and rotation mode
+use bevy::prelude::{*};
 
 pub fn camera_controls(
     mut camera_query: Query<&mut Transform, With<Camera>>,
@@ -83,25 +80,12 @@ pub fn camera_controls(
             let camera_forward = time_delta * camera_speed_forward;
     
             let side_movement = camera_transform.local_x().as_vec3();
-            let forward_movement = camera_transform.local_z().as_vec3();
+            let forward_movement = -camera_transform.local_z().as_vec3();
     
-            camera_transform.rotate(Quat::from_rotation_z(camera_rotation_angle_horizontal) * Quat::from_axis_angle(side_movement, camera_rotation_angle_vertical));
-            camera_transform.translation.z += camera_vertical;
-            camera_transform.translation +=  (Vec3::new(forward_movement.x,forward_movement.y,0.) * -camera_forward) + (side_movement * camera_horizontal);
+            camera_transform.rotate(Quat::from_rotation_y(camera_rotation_angle_horizontal) * Quat::from_axis_angle(side_movement, camera_rotation_angle_vertical));
+            camera_transform.translation.y += camera_vertical;
+            camera_transform.translation +=  (Vec3::new(forward_movement.x,0.,forward_movement.z) * camera_forward) + (side_movement * camera_horizontal);
         }
     }
 
 }
-
-// struct ToggleCameraRotation(bool);
-// impl bevy::prelude::Resource for ToggleCameraRotation {}
-
-// fn toggle_camera_rotation(
-//     mut toggle_camera_rotation: ResMut<ToggleCameraRotation>,
-//     keyboard_input: Res<Input<KeyCode>>,
-// ) {
-//     // Toggle time-based rotation on/off when Space is pressed
-//     if keyboard_input.just_pressed(KeyCode::Space) {
-//         toggle_camera_rotation.0 = !toggle_camera_rotation.0;
-//     }
-// }

@@ -3,23 +3,29 @@
 
 use bevy::{prelude::*, render::view::NoIndirectDrawing};
 use bevy_egui::{
-    EguiPlugin, EguiPrimaryContextPass,
+    EguiPlugin, EguiPrimaryContextPass, PrimaryEguiContext
 };
 
 mod camera;
+use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use camera::camera_controls;
 
 mod ui;
 use ui::{ui_overlay, VisualizationSettings};
 
 mod visualization;
-use visualization::{spawn_3d_visualization, spawn_grid, VisualizationMesh, SCALE};
+use visualization::{
+    spawn_3d_visualization, 
+    spawn_grid, 
+    VisualizationMesh, 
+    SCALE
+};
 
 use bevy_pointcloud::{
     render::PointCloudRenderMode, 
     PointCloudPlugin, 
     point_cloud::{PointCloud}, 
-    point_cloud_material::PointCloudMaterial
+    point_cloud_material::PointCloudMaterial,
 };
 
 use crate::ui::{ColorChannel, StepType};
@@ -35,6 +41,7 @@ fn main() {
             ..Default::default()
         }))
         .add_plugins(EguiPlugin::default())
+        .add_plugins(PanOrbitCameraPlugin)
         .add_plugins(PointCloudPlugin)
         .add_systems(Startup, setup)
         .add_systems(Update, (update_visualization, update_gizmo_config, update_grid))
@@ -52,9 +59,12 @@ fn setup(
     point_cloud_materials: ResMut<Assets<PointCloudMaterial>>,
 ) {
 
+    // egui_global_settings.auto_create_primary_context = false;
+
     //Needs moved into camera.rs
     commands.spawn((
-        Camera3d {..Default::default()},
+        PrimaryEguiContext,
+        PanOrbitCamera::default(),
         Transform::from_xyz(SCALE*2., SCALE*2., SCALE*2.).looking_at(Vec3::new(0., 0., 0.), Vec3::Z),
         NoIndirectDrawing,
         Msaa::Off,
