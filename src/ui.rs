@@ -14,6 +14,8 @@ use crate::three_dim_viz::{
 
 #[derive(Resource, Clone)]
 pub struct VisualizationSettings{
+    pub minimized: bool,
+
     pub three_dimension_settings: ThreeDimensionSettings,
 
     pub viz_scale: f32,
@@ -109,6 +111,8 @@ pub enum StepType {
 impl Default for VisualizationSettings{
     fn default() -> Self {
         Self {
+            minimized: false,
+
             three_dimension_settings: ThreeDimensionSettings::Scale,
 
             viz_scale: 1.,
@@ -170,7 +174,13 @@ pub fn ui_overlay(mut contexts: EguiContexts, mut settings: ResMut<Visualization
         egui::Sense::hover();
         let width = ui.available_width();
 
-        ui.horizontal(|ui| {
+
+        let min_text = if settings.minimized {"Ʌ"} else {"V"};
+        let is_minimized = settings.minimized;
+        ui.selectable_value(&mut settings.minimized, !is_minimized , min_text);
+
+        if !settings.minimized {
+                    ui.horizontal(|ui| {
             ui.selectable_value(&mut settings.three_dimension_settings, ThreeDimensionSettings::Scale, "Scale");
             ui.selectable_value(&mut settings.three_dimension_settings, ThreeDimensionSettings::PerceptualOffset, "Perceptual Offset");
             ui.selectable_value(&mut settings.three_dimension_settings, ThreeDimensionSettings::ChannelSettings, "Channel Settings");
@@ -372,6 +382,7 @@ This application is licensed under MPL2"
 
         ui.separator();
         global_theme_preference_buttons(ui);
+        };
 
     });
 
