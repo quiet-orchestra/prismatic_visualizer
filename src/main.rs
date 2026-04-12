@@ -21,6 +21,9 @@ use visualization::{
     SCALE
 };
 
+mod two_dim_viz;
+use two_dim_viz::TwoDimViz;
+
 use bevy_pointcloud::{
     render::PointCloudRenderMode, 
     PointCloudPlugin, 
@@ -43,6 +46,7 @@ fn main() {
         .add_plugins(EguiPlugin::default())
         .add_plugins(PanOrbitCameraPlugin)
         .add_plugins(PointCloudPlugin)
+        .add_plugins(TwoDimViz)
         .add_systems(Startup, setup)
         .add_systems(Update, (update_visualization, update_gizmo_config, update_grid))
         .add_systems(FixedUpdate, camera_controls)
@@ -59,9 +63,6 @@ fn setup(
     point_cloud_materials: ResMut<Assets<PointCloudMaterial>>,
 ) {
 
-    // egui_global_settings.auto_create_primary_context = false;
-
-    //Needs moved into camera.rs
     commands.spawn((
         PrimaryEguiContext,
         PanOrbitCamera::default(),
