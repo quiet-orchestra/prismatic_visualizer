@@ -5,7 +5,7 @@ use bevy_egui::{
     EguiContexts, egui::{self, global_theme_preference_buttons}
 };
 
-use crate::visualization::{
+use crate::three_dim_viz::{
     ColorModelCategory, 
     Dimensionality, 
     SlicingMethod, 
@@ -18,7 +18,10 @@ pub struct VisualizationSettings{
 
     pub viz_scale: f32,
     pub visualization_alpha: f32,
+
     pub grid: GridCategory,
+    pub grid_scale: f32,
+    pub grid_divs: u32,
 
     pub component_limit: (f32,f32,f32),
     pub per_component_gamma: bool,
@@ -110,7 +113,10 @@ impl Default for VisualizationSettings{
 
             viz_scale: 1.,
             visualization_alpha: 1.,
+
             grid: GridCategory::None,
+            grid_scale: 1.0,
+            grid_divs: 10,
 
             component_limit: (1., 1., 1.), 
             per_component_gamma: false,
@@ -184,6 +190,8 @@ pub fn ui_overlay(mut contexts: EguiContexts, mut settings: ResMut<Visualization
                         ui.selectable_value(&mut settings.grid, GridCategory::TwoDGrids, "2D Grids");
                         // ui.selectable_value(&mut settings.grid, GridCategory::ThreeDGrid, "3D Grid");
                     });
+                    ui.add(egui::Slider::new( &mut settings.grid_scale ,0.0..=2.0));
+                    ui.add(egui::Slider::new( &mut settings.grid_divs ,1..=25));
             },
             ThreeDimensionSettings::PerceptualOffset => {
                 ui.add(egui::Slider::new( &mut settings.component_limit.0 ,0.0..=1.0).text("Red"));

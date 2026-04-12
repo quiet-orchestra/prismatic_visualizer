@@ -13,8 +13,8 @@ use camera::camera_controls;
 mod ui;
 use ui::{ui_overlay, VisualizationSettings};
 
-mod visualization;
-use visualization::{
+mod three_dim_viz;
+use three_dim_viz::{
     spawn_3d_visualization, 
     spawn_grid, 
     VisualizationMesh, 
@@ -46,7 +46,7 @@ fn main() {
         .add_plugins(EguiPlugin::default())
         .add_plugins(PanOrbitCameraPlugin)
         .add_plugins(PointCloudPlugin)
-        .add_plugins(TwoDimViz)
+        // .add_plugins(TwoDimViz)
         .add_systems(Startup, setup)
         .add_systems(Update, (update_visualization, update_gizmo_config, update_grid))
         .add_systems(FixedUpdate, camera_controls)

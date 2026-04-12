@@ -729,6 +729,9 @@ pub fn spawn_grid(
     settings: &VisualizationSettings,
 ){
 
+    let scale = settings.grid_scale;
+    let divs = settings.grid_divs;
+
     match settings.grid {
         GridCategory::None => {},
         GridCategory::TwoDGrids => {
@@ -737,7 +740,7 @@ pub fn spawn_grid(
                    Vec3::new(5.0, 5.0, -0.01),
                 ),
                 UVec2::new(10, 10),
-                Vec2::splat(1.),
+                Vec2::splat(scale),
                 constants::BLACK.to_bevy_color(),
             )
             .outer_edges();
@@ -747,7 +750,7 @@ pub fn spawn_grid(
                     Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)
                 ),
                 UVec2::new(10, 10),
-                Vec2::splat(1.),
+                Vec2::splat(scale),
                 constants::BLACK.to_bevy_color(),
             )
             .outer_edges();
@@ -757,7 +760,7 @@ pub fn spawn_grid(
                     Quat::from_rotation_y(std::f32::consts::FRAC_PI_2)
                 ),
                 UVec2::new(10, 10),
-                Vec2::splat(1.),
+                Vec2::splat(scale),
                 constants::BLACK.to_bevy_color(),
             )
             .outer_edges();
