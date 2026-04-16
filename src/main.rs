@@ -11,14 +11,14 @@ use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use camera::camera_controls;
 
 mod ui;
-use ui::{ui_overlay, VisualizationSettings};
+use ui::{ui_overlay, Settings};
 
 mod three_dim_viz;
 use three_dim_viz::{
     spawn_3d_visualization, 
     spawn_grid, 
     VisualizationMesh, 
-    SCALE
+    SCALE,
 };
 
 mod two_dim_viz;
@@ -31,7 +31,7 @@ use bevy_pointcloud::{
     point_cloud_material::PointCloudMaterial,
 };
 
-use crate::ui::{ColorChannel, StepType};
+use crate::{three_dim_viz::GridSettings, ui::{ColorChannel, StepType}};
 
 
 fn main() {
@@ -84,8 +84,11 @@ fn setup(
         ColorChannel { start: 0., end: 1., steps: 8, step_type: StepType::Inclusive},
     );
 
-    let settings = VisualizationSettings {
+    let grid_settings = GridSettings { ..Default::default()};
+
+    let settings = Settings {
         channel_settings,
+        grid_settings,
         ..Default::default()
     };
 
@@ -100,7 +103,7 @@ fn setup(
 fn update_visualization(
     gizmos: Gizmos,
     mut commands: Commands,
-    visualization_settings: ResMut<VisualizationSettings>,
+    visualization_settings: ResMut<Settings>,
     meshes: ResMut<Assets<Mesh>>,
     materials: ResMut<Assets<StandardMaterial>>,
     point_clouds: ResMut<Assets<PointCloud>>,
@@ -123,14 +126,15 @@ fn update_visualization(
 
  fn update_grid(
     gizmos: Gizmos,
-    visualization_settings: ResMut<VisualizationSettings>,
+    settings: Res<Settings>,
  ){
-    spawn_grid(gizmos, &visualization_settings);
+    let grid_settings= settings.grid_settings;
+    spawn_grid(gizmos, grid_settings);
  }
 
 fn update_gizmo_config(
     mut config_store: ResMut<bevy::prelude::GizmoConfigStore>,
-    visualization_settings: Res<VisualizationSettings>,
+    visualization_settings: Res<Settings>,
 ) {
     if visualization_settings.is_changed() {
         let (config, _handle) = config_store.config_mut::<bevy::prelude::DefaultGizmoConfigGroup>();

@@ -14,16 +14,14 @@ use bevy::{
 
 use crate::ui::*;
 
+mod grid_settings;
+pub use grid_settings::{GridCategory, GridSettings};
+
 // A marker component for our components so we can query them separately from the ground plane
 #[derive(Component)]
 pub struct VisualizationMesh;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum GridCategory {
-    None,
-    TwoDGrids,
-    // ThreeDGrid,
-}
+
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ColorModelCategory {
@@ -107,7 +105,7 @@ impl DimensionList {
         point_clouds: &mut Assets<PointCloud>,
         point_cloud_material: &mut Assets<PointCloudMaterial>,
         gizmos: &mut Gizmos,
-        settings: &VisualizationSettings,
+        settings: &Settings,
     ) {
         match self {
             DimensionList::Vertex(vertex_list) => {
@@ -334,11 +332,11 @@ impl IntoVec3 for [OrderedFloat<f32>; 3] {
 }
 
 trait OrderedArrayIntoColor {
-    fn into_color(self, settings: &VisualizationSettings) -> Color;
+    fn into_color(self, settings: &Settings) -> Color;
 }
 
 impl OrderedArrayIntoColor for [OrderedFloat<f32>; 4] {
-    fn into_color(self, settings: &VisualizationSettings) -> Color {
+    fn into_color(self, settings: &Settings) -> Color {
         P_Color::from_array(self.map(|x| x.into_inner()), settings.color_model).to_bevy_color()
     }
 }
@@ -478,7 +476,7 @@ impl VertexCollection for FaceList {
     }
 }
 
-fn transform_coordinates(vertex: &(f32,f32,f32), settings: &VisualizationSettings) -> (f32,f32,f32) {
+fn transform_coordinates(vertex: &(f32,f32,f32), settings: &Settings) -> (f32,f32,f32) {
     let (mut a, mut b, mut c) =  vertex;
 
     if settings.mirrored {
@@ -519,14 +517,14 @@ pub fn spawn_3d_visualization(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut point_clouds: ResMut<Assets<PointCloud>>,
     mut point_cloud_materials: ResMut<Assets<PointCloudMaterial>>,
-    settings: &VisualizationSettings,
+    settings: &Settings,
     )
 {
     generate_dimension_lists(settings)
         .render(&mut commands, &mut meshes, &mut materials, &mut point_clouds ,&mut point_cloud_materials, &mut gizmos, settings);
 }
 
-fn generate_dimension_lists(settings: &VisualizationSettings) ->  DimensionList{
+fn generate_dimension_lists(settings: &Settings) ->  DimensionList{
     
     let (mut dim_list, along_grain): (DimensionList, [bool;3]) = 
     match settings.dimensionality {
@@ -681,7 +679,7 @@ impl Channel{
 
 
 
-fn get_point_and_color(base_color: (f32,f32,f32), settings: &VisualizationSettings) -> ([f32;3], P_Color){
+fn get_point_and_color(base_color: (f32,f32,f32), settings: &Settings) -> ([f32;3], P_Color){
     let (r_gamma,g_gamma,b_gamma) = settings.gamma;
     let gamma_adjust = 2.2;
     let gamma = [
@@ -726,40 +724,41 @@ fn get_point_and_color(base_color: (f32,f32,f32), settings: &VisualizationSettin
 
 pub fn spawn_grid(
     mut gizmos: Gizmos,
-    settings: &VisualizationSettings,
+    settings: GridSettings,
 ){
 
     let scale = settings.grid_scale;
     let divs = settings.grid_divs;
+    let half_scale = scale / 2. * divs as f32;
 
     match settings.grid {
         GridCategory::None => {},
         GridCategory::TwoDGrids => {
             gizmos.grid(
                 Isometry3d::from_translation(
-                   Vec3::new(5.0, 5.0, -0.01),
+                   Vec3::new(half_scale, half_scale, -0.01),
                 ),
-                UVec2::new(10, 10),
+                UVec2::new(divs, divs),
                 Vec2::splat(scale),
                 constants::BLACK.to_bevy_color(),
             )
             .outer_edges();
             gizmos.grid(
                 Isometry3d::new(
-                    Vec3::new(5.0, -0.01, 5.0),
+                    Vec3::new(half_scale, -0.01, half_scale),
                     Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)
                 ),
-                UVec2::new(10, 10),
+                UVec2::new(divs, divs),
                 Vec2::splat(scale),
                 constants::BLACK.to_bevy_color(),
             )
             .outer_edges();
             gizmos.grid(
                 Isometry3d::new(
-                    Vec3::new(-0.01, 5.0, 5.0),
+                    Vec3::new(-0.01, half_scale, half_scale),
                     Quat::from_rotation_y(std::f32::consts::FRAC_PI_2)
                 ),
-                UVec2::new(10, 10),
+                UVec2::new(divs, divs),
                 Vec2::splat(scale),
                 constants::BLACK.to_bevy_color(),
             )

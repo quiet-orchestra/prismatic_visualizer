@@ -5,15 +5,14 @@ use bevy_egui::{
     EguiContexts, egui::{self, global_theme_preference_buttons}
 };
 
-use crate::three_dim_viz::{
-    ColorModelCategory, 
-    Dimensionality, 
-    SlicingMethod, 
-    GridCategory,
-};
+pub(crate) mod ui_traits;
+
+use crate::{three_dim_viz::{
+    ColorModelCategory, Dimensionality, GridSettings, SlicingMethod
+}, ui::ui_traits::Setting};
 
 #[derive(Resource, Clone)]
-pub struct VisualizationSettings{
+pub struct Settings{
     pub minimized: bool,
 
     pub three_dimension_settings: ThreeDimensionSettings,
@@ -21,9 +20,7 @@ pub struct VisualizationSettings{
     pub viz_scale: f32,
     pub visualization_alpha: f32,
 
-    pub grid: GridCategory,
-    pub grid_scale: f32,
-    pub grid_divs: u32,
+    pub grid_settings: GridSettings,
 
     pub component_limit: (f32,f32,f32),
     pub per_component_gamma: bool,
@@ -108,7 +105,7 @@ pub enum StepType {
 
 
 
-impl Default for VisualizationSettings{
+impl Default for Settings{
     fn default() -> Self {
         Self {
             minimized: false,
@@ -118,9 +115,7 @@ impl Default for VisualizationSettings{
             viz_scale: 1.,
             visualization_alpha: 1.,
 
-            grid: GridCategory::None,
-            grid_scale: 1.0,
-            grid_divs: 10,
+            grid_settings: GridSettings::default(),
 
             component_limit: (1., 1., 1.), 
             per_component_gamma: false,
@@ -165,7 +160,7 @@ pub enum ThreeDimensionSettings {
     Attribution,
 }
 
-pub fn ui_overlay(mut contexts: EguiContexts, mut settings: ResMut<VisualizationSettings>) {
+pub fn ui_overlay(mut contexts: EguiContexts, mut settings: ResMut<Settings>) {
 
     //Create window for variable sliders
     egui::TopBottomPanel::top("Settings")
@@ -195,13 +190,7 @@ pub fn ui_overlay(mut contexts: EguiContexts, mut settings: ResMut<Visualization
             ThreeDimensionSettings::Scale => {
                 ui.add(egui::Slider::new( &mut settings.viz_scale ,0.0..=2.0).text("Visualization Scale"));
                 ui.add(egui::Slider::new( &mut settings.visualization_alpha, 0.0..=1.0).text("Alpha"));
-                ui.horizontal( |ui| {
-                        ui.selectable_value(&mut settings.grid, GridCategory::None, "None");
-                        ui.selectable_value(&mut settings.grid, GridCategory::TwoDGrids, "2D Grids");
-                        // ui.selectable_value(&mut settings.grid, GridCategory::ThreeDGrid, "3D Grid");
-                    });
-                    ui.add(egui::Slider::new( &mut settings.grid_scale ,0.0..=2.0));
-                    ui.add(egui::Slider::new( &mut settings.grid_divs ,1..=25));
+                settings.grid_settings.ui(ui);
             },
             ThreeDimensionSettings::PerceptualOffset => {
                 ui.add(egui::Slider::new( &mut settings.component_limit.0 ,0.0..=1.0).text("Red"));
