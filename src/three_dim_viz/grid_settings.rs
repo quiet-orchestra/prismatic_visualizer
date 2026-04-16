@@ -1,10 +1,9 @@
-use bevy::prelude::*;
-use bevy_egui::egui::{Slider};
+use bevy_egui::egui::{Ui,Slider};
 
 use crate::ui::ui_traits::Setting;
 
 
-#[derive(Resource, Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct GridSettings{
     pub grid: GridCategory,
     pub grid_scale: f32,
@@ -16,7 +15,7 @@ impl Setting for GridSettings {
         return "Grid Settings";
     }
 
-    fn ui(&mut self, ui: &mut bevy_egui::egui::Ui) {
+    fn ui(&mut self, ui: &mut Ui) {
         ui.horizontal( |ui| {
             ui.selectable_value(&mut self.grid, GridCategory::None, "None");
             ui.selectable_value(&mut self.grid, GridCategory::TwoDGrids, "2D Grids");

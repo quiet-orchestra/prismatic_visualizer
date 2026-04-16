@@ -14,6 +14,9 @@ use bevy::{
 
 use crate::ui::*;
 
+mod scale_settings;
+pub use scale_settings::ScaleSettings;
+
 mod grid_settings;
 pub use grid_settings::{GridCategory, GridSettings};
 
@@ -114,7 +117,7 @@ impl DimensionList {
                     .iter()
                     .map(|(vertex_object, _)| {
                         let position: Vec3 =
-                            vertex_object.point.into_vec3() * SCALE * settings.viz_scale;
+                            vertex_object.point.into_vec3() * SCALE * settings.scale_settings.viz_scale;
                         let color = P_Color::from_array(
                             vertex_object.color.map(|x| x.into_inner()),
                             settings.color_model,
@@ -151,10 +154,10 @@ impl DimensionList {
                     let vertex_2 = edge_list.vertex_registry.get_index(edge.1).unwrap().0;
                     
                     if settings.discrete_color {
-                        gizmos.line(vertex_1.point.map(|axis| axis.into_inner() * SCALE * settings.viz_scale).into(), vertex_2.point.map(|axis| axis.into_inner() * SCALE * settings.viz_scale).into(), vertex_1.color.into_color(settings));
+                        gizmos.line(vertex_1.point.map(|axis| axis.into_inner() * SCALE * settings.scale_settings.viz_scale).into(), vertex_2.point.map(|axis| axis.into_inner() * SCALE * settings.scale_settings.viz_scale).into(), vertex_1.color.into_color(settings));
                     } 
                     else {
-                        gizmos.line_gradient(vertex_1.point.map(|axis| axis.into_inner() * SCALE * settings.viz_scale).into(), vertex_2.point.map(|axis| axis.into_inner() * SCALE * settings.viz_scale).into(), vertex_1.color.into_color(settings), vertex_2.color.into_color(settings));
+                        gizmos.line_gradient(vertex_1.point.map(|axis| axis.into_inner() * SCALE * settings.scale_settings.viz_scale).into(), vertex_2.point.map(|axis| axis.into_inner() * SCALE * settings.scale_settings.viz_scale).into(), vertex_1.color.into_color(settings), vertex_2.color.into_color(settings));
                     }
                 }
             },       
@@ -180,7 +183,7 @@ impl DimensionList {
                     
                     let base = positions.len() as u32;
                     for v in &verts {
-                        positions.push(v.point.map(|p| p.into_inner() * SCALE * settings.viz_scale));
+                        positions.push(v.point.map(|p| p.into_inner() * SCALE * settings.scale_settings.viz_scale));
                         let color = 
                             if settings.discrete_color {
                                 P_Color::from_array(v1.color.map(|x| x.into_inner()), settings.color_model)
@@ -258,7 +261,7 @@ impl DimensionList {
                     // Push positions/colors                    
                     let base = positions.len() as u32;
                     for v in &verts {
-                        positions.push(v.point.map(|p| p.into_inner() * SCALE * settings.viz_scale));
+                        positions.push(v.point.map(|p| p.into_inner() * SCALE * settings.scale_settings.viz_scale));
                         let color = 
                             if settings.discrete_color {
                                 P_Color::from_array(v1.color.map(|x| x.into_inner()), settings.color_model)
@@ -690,7 +693,7 @@ fn get_point_and_color(base_color: (f32,f32,f32), settings: &Settings) -> ([f32;
     
     let yuv_offset = if settings.color_model.is_luma_chroma() {-0.5} else {0.};
     
-    let base_color = (base_color.0,base_color.1 + yuv_offset,base_color.2 + yuv_offset,settings.visualization_alpha);
+    let base_color = (base_color.0,base_color.1 + yuv_offset, base_color.2 + yuv_offset, settings.scale_settings.viz_alpha);
     let raw_color = P_Color::from_tuple(base_color, settings.color_model);
     let chroma = base_color.1;
 
@@ -718,7 +721,7 @@ fn get_point_and_color(base_color: (f32,f32,f32), settings: &Settings) -> ([f32;
         Vec3 {x, y, z}
     };
 
-    (point.into(), color.set_alpha(settings.visualization_alpha))
+    (point.into(), color.set_alpha(settings.scale_settings.viz_alpha))
 }
 
 

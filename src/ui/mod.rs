@@ -8,7 +8,7 @@ use bevy_egui::{
 pub(crate) mod ui_traits;
 
 use crate::{three_dim_viz::{
-    ColorModelCategory, Dimensionality, GridSettings, SlicingMethod
+    ColorModelCategory, Dimensionality, ScaleSettings, GridSettings, SlicingMethod
 }, ui::ui_traits::Setting};
 
 #[derive(Resource, Clone)]
@@ -17,8 +17,7 @@ pub struct Settings{
 
     pub three_dimension_settings: ThreeDimensionSettings,
 
-    pub viz_scale: f32,
-    pub visualization_alpha: f32,
+    pub scale_settings: ScaleSettings,
 
     pub grid_settings: GridSettings,
 
@@ -112,8 +111,7 @@ impl Default for Settings{
 
             three_dimension_settings: ThreeDimensionSettings::Scale,
 
-            viz_scale: 1.,
-            visualization_alpha: 1.,
+            scale_settings: ScaleSettings::default(),
 
             grid_settings: GridSettings::default(),
 
@@ -188,8 +186,7 @@ pub fn ui_overlay(mut contexts: EguiContexts, mut settings: ResMut<Settings>) {
 
         match settings.three_dimension_settings {
             ThreeDimensionSettings::Scale => {
-                ui.add(egui::Slider::new( &mut settings.viz_scale ,0.0..=2.0).text("Visualization Scale"));
-                ui.add(egui::Slider::new( &mut settings.visualization_alpha, 0.0..=1.0).text("Alpha"));
+                settings.scale_settings.ui(ui);
                 settings.grid_settings.ui(ui);
             },
             ThreeDimensionSettings::PerceptualOffset => {
