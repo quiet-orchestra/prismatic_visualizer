@@ -1,20 +1,20 @@
 use bevy_egui::egui::{ComboBox, Ui};
 
-pub trait Setting {
+pub trait Setting: Send + Sync + 'static {
     fn heading(&self) -> &str;
     fn ui(&mut self, ui: &mut Ui);
 }
 
-pub struct SettingMenu {
+pub struct SettingsMenu {
     index: usize,
     minimized: bool,
-    heading: String,
+    heading: &'static str,
     pub settings_list: Vec<Box<dyn Setting>>,
 }
 
-impl SettingMenu {
-    pub fn new(heading: String, settings_list: Vec<Box<dyn Setting>>) -> SettingMenu {
-        SettingMenu { index: 0, minimized: false, heading, settings_list }
+impl SettingsMenu {
+    pub fn new(heading: &'static str, settings_list: Vec<Box<dyn Setting>>) -> SettingsMenu {
+        SettingsMenu { index: 0, minimized: false, heading, settings_list }
     }
 
     pub fn ui(
@@ -26,7 +26,7 @@ impl SettingMenu {
             let is_minimized = self.minimized;
             ui.selectable_value(&mut self.minimized, !is_minimized , min_text);
 
-            ui.label(&self.heading);
+            ui.label(self.heading);
         });
         ui.separator();
 

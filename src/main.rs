@@ -11,7 +11,7 @@ use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use camera::camera_controls;
 
 mod ui;
-use ui::{ui_overlay, Settings};
+use ui::{three_dim_ui, Settings};
 
 mod three_dim_viz;
 use three_dim_viz::{
@@ -31,6 +31,8 @@ use bevy_pointcloud::{
     point_cloud_material::PointCloudMaterial,
 };
 
+use crate::ui::SettingsMenus;
+
 
 fn main() {
     App::new()
@@ -48,7 +50,7 @@ fn main() {
         .add_systems(Startup, setup)
         .add_systems(Update, (update_visualization, update_gizmo_config, update_grid))
         .add_systems(FixedUpdate, camera_controls)
-        .add_systems(EguiPrimaryContextPass, ui_overlay)
+        .add_systems(EguiPrimaryContextPass, three_dim_ui)
         .run();
 }
  
@@ -81,11 +83,10 @@ fn setup(
         ..Default::default()
     };
 
-    let settings_copy = settings.clone();
-
     commands.insert_resource(settings);
+    commands.insert_resource(SettingsMenus::new(settings));
 
-    spawn_3d_visualization(gizmos, commands, meshes, materials, point_clouds, point_cloud_materials, &settings_copy);
+    spawn_3d_visualization(gizmos, commands, meshes, materials, point_clouds, point_cloud_materials, &settings);
 
 }
  
