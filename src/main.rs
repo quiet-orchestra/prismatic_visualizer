@@ -21,8 +21,8 @@ use three_dim_viz::{
     SCALE,
 };
 
-mod two_dim_viz;
-use two_dim_viz::TwoDimViz;
+// mod two_dim_viz;
+// use two_dim_viz::TwoDimViz;
 
 use bevy_pointcloud::{
     render::PointCloudRenderMode, 
@@ -30,8 +30,6 @@ use bevy_pointcloud::{
     point_cloud::{PointCloud}, 
     point_cloud_material::PointCloudMaterial,
 };
-
-use crate::{three_dim_viz::GridSettings, ui::{ColorChannel, StepType}};
 
 
 fn main() {
@@ -78,17 +76,8 @@ fn setup(
         },
     ));
 
-    let channel_settings: (ColorChannel, ColorChannel, ColorChannel) = (
-        ColorChannel { start: 0., end: 1., steps: 12, step_type: StepType::Forward },
-        ColorChannel { start: 0., end: 1., steps: 8, step_type: StepType::Inclusive },
-        ColorChannel { start: 0., end: 1., steps: 8, step_type: StepType::Inclusive},
-    );
-
-    let grid_settings = GridSettings { ..Default::default()};
 
     let settings = Settings {
-        channel_settings,
-        grid_settings,
         ..Default::default()
     };
 
@@ -134,11 +123,11 @@ fn update_visualization(
 
 fn update_gizmo_config(
     mut config_store: ResMut<bevy::prelude::GizmoConfigStore>,
-    visualization_settings: Res<Settings>,
+    settings: Res<Settings>,
 ) {
-    if visualization_settings.is_changed() {
+    if settings.is_changed() {
         let (config, _handle) = config_store.config_mut::<bevy::prelude::DefaultGizmoConfigGroup>();
-        config.line.width = visualization_settings.line_width * 5. ;
+        config.line.width = settings.dimensionality_settings.line_width * 5. ;
         config.line.joints = GizmoLineJoint::Miter;
 
     }

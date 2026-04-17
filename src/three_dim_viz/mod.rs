@@ -20,6 +20,24 @@ pub use scale_settings::ScaleSettings;
 mod grid_settings;
 pub use grid_settings::{GridCategory, GridSettings};
 
+mod perceptual_offset_settings;
+pub use perceptual_offset_settings::PerceptualOffsetSettings;
+
+mod color_channel_settings;
+pub use color_channel_settings::ColorChannelSettings;
+
+mod color_model_settings;
+pub use color_model_settings::ColorModelSettings;
+
+mod dimensionality_settings;
+pub use dimensionality_settings::DimensionalitySettings;
+
+mod controls_settings;
+pub use controls_settings::ControlSettings;
+
+mod attribution;
+pub use attribution::Attribution;
+
 // A marker component for our components so we can query them separately from the ground plane
 #[derive(Component)]
 pub struct VisualizationMesh;
@@ -84,7 +102,7 @@ impl SlicingMethod {
     }
 }
 
-#[derive(Clone,PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Dimensionality {
     Vertex,
     Edge,
@@ -120,21 +138,21 @@ impl DimensionList {
                             vertex_object.point.into_vec3() * SCALE * settings.scale_settings.viz_scale;
                         let color = P_Color::from_array(
                             vertex_object.color.map(|x| x.into_inner()),
-                            settings.color_model,
+                            settings.color_model_settings.color_model,
                         )
                         .to_bevy_color()
                         .to_srgba()
                         .to_f32_array();
                         PointCloudData {
                             position,
-                            point_size: settings.instance_scale * SCALE,
+                            point_size: settings.dimensionality_settings.instance_scale * SCALE,
                             color,
                         }
                     })
                     .collect::<Vec<_>>();
 
                     let my_material = point_cloud_material.add(PointCloudMaterial {
-                        point_size: 50.0 * settings.instance_scale * SCALE,
+                        point_size: 50.0 * settings.dimensionality_settings.instance_scale * SCALE,
                         ..default()
                     });
 
@@ -153,7 +171,7 @@ impl DimensionList {
                     let vertex_1 = edge_list.vertex_registry.get_index(edge.0).unwrap().0;
                     let vertex_2 = edge_list.vertex_registry.get_index(edge.1).unwrap().0;
                     
-                    if settings.discrete_color {
+                    if settings.dimensionality_settings.discrete_color {
                         gizmos.line(vertex_1.point.map(|axis| axis.into_inner() * SCALE * settings.scale_settings.viz_scale).into(), vertex_2.point.map(|axis| axis.into_inner() * SCALE * settings.scale_settings.viz_scale).into(), vertex_1.color.into_color(settings));
                     } 
                     else {
@@ -185,14 +203,14 @@ impl DimensionList {
                     for v in &verts {
                         positions.push(v.point.map(|p| p.into_inner() * SCALE * settings.scale_settings.viz_scale));
                         let color = 
-                            if settings.discrete_color {
-                                P_Color::from_array(v1.color.map(|x| x.into_inner()), settings.color_model)
+                            if settings.dimensionality_settings.discrete_color {
+                                P_Color::from_array(v1.color.map(|x| x.into_inner()), settings.color_model_settings.color_model)
                                 .to_bevy_color()
                                 .to_linear()
                                 .to_f32_array()
                             }
                             else {
-                                P_Color::from_array(v.color.map(|x| x.into_inner()), settings.color_model)
+                                P_Color::from_array(v.color.map(|x| x.into_inner()), settings.color_model_settings.color_model)
                                 .to_bevy_color()
                                 .to_linear()
                                 .to_f32_array()
@@ -263,14 +281,14 @@ impl DimensionList {
                     for v in &verts {
                         positions.push(v.point.map(|p| p.into_inner() * SCALE * settings.scale_settings.viz_scale));
                         let color = 
-                            if settings.discrete_color {
-                                P_Color::from_array(v1.color.map(|x| x.into_inner()), settings.color_model)
+                            if settings.dimensionality_settings.discrete_color {
+                                P_Color::from_array(v1.color.map(|x| x.into_inner()), settings.color_model_settings.color_model)
                                 .to_bevy_color()
                                 .to_linear()
                                 .to_f32_array()
                             }
                             else {
-                                P_Color::from_array(v.color.map(|x| x.into_inner()), settings.color_model)
+                                P_Color::from_array(v.color.map(|x| x.into_inner()), settings.color_model_settings.color_model)
                                 .to_bevy_color()
                                 .to_linear()
                                 .to_f32_array()
@@ -340,7 +358,7 @@ trait OrderedArrayIntoColor {
 
 impl OrderedArrayIntoColor for [OrderedFloat<f32>; 4] {
     fn into_color(self, settings: &Settings) -> Color {
-        P_Color::from_array(self.map(|x| x.into_inner()), settings.color_model).to_bevy_color()
+        P_Color::from_array(self.map(|x| x.into_inner()), settings.color_model_settings.color_model).to_bevy_color()
     }
 }
 
@@ -479,23 +497,34 @@ impl VertexCollection for FaceList {
     }
 }
 
-fn transform_coordinates(vertex: &(f32,f32,f32), settings: &Settings) -> (f32,f32,f32) {
-    let (mut a, mut b, mut c) =  vertex;
+fn transform_coordinates(vertex: (f32,f32,f32), settings: &Settings) -> (f32,f32,f32) {
+    let (a, b, c) =  vertex;
 
-    if settings.mirrored {
-            (a,b,c) = (c,b,a);
+    if !settings.color_model_settings.mirrored{
+        match settings.color_model_settings.rotated {
+            RotationChirality::Middle => {
+                return (a,b,c);
+            },
+            RotationChirality::Right => {
+                return (b,c,a);
+            },
+            RotationChirality::Left => {
+                return (c,a,b);
+            },
+        }
     }
-
-    match settings.rotated {
-        RotationChirality::None => {
-            return (a,b,c);
-        },
-        RotationChirality::Right => {
-            return (b,c,a);
-        },
-        RotationChirality::Left => {
-            return (c,a,b);
-        },
+    else {
+        match settings.color_model_settings.rotated {
+            RotationChirality::Middle => {
+                return (c,b,a);
+            },
+            RotationChirality::Right => {
+                return (a,c,b);
+            },
+            RotationChirality::Left => {
+                return (b,a,c);
+            },
+        }
     }
 
 }
@@ -530,15 +559,15 @@ pub fn spawn_3d_visualization(
 fn generate_dimension_lists(settings: &Settings) ->  DimensionList{
     
     let (mut dim_list, along_grain): (DimensionList, [bool;3]) = 
-    match settings.dimensionality {
+    match settings.dimensionality_settings.dimensionality {
         Dimensionality::Vertex => (DimensionList::Vertex(VertexList::new()),
         [false, false, false]
         ),
         Dimensionality::Edge => (DimensionList::Edge(EdgeList::new()),
-        settings.face_slicing.get_edge_offsets()[1].map(|x| x != 0 ),
+        settings.dimensionality_settings.face_slicing.get_edge_offsets()[1].map(|x| x != 0 ),
         ),
         Dimensionality::Face => (DimensionList::Face(FaceList::new()),
-        settings.face_slicing.get_edge_offsets()[1].map(|x| x == 0 ),
+        settings.dimensionality_settings.face_slicing.get_edge_offsets()[1].map(|x| x == 0 ),
         ),
         Dimensionality::Volume => (DimensionList::Volume(FaceList::new()),
         [false, false, false]
@@ -547,9 +576,9 @@ fn generate_dimension_lists(settings: &Settings) ->  DimensionList{
 
 
 
-    let channel_a = Channel::from_tuple(settings.channel_settings.0.generate_range(along_grain[0]));
-    let channel_b = Channel::from_tuple(settings.channel_settings.1.generate_range(along_grain[1]));
-    let channel_c = Channel::from_tuple(settings.channel_settings.2.generate_range(along_grain[2]));
+    let channel_a = Channel::from_tuple(settings.color_channel_settings.0.generate_range(along_grain[0]));
+    let channel_b = Channel::from_tuple(settings.color_channel_settings.1.generate_range(along_grain[1]));
+    let channel_c = Channel::from_tuple(settings.color_channel_settings.2.generate_range(along_grain[2]));
 
     for a in 0..channel_a.steps  {
         for b in 0..channel_b.steps {
@@ -567,7 +596,7 @@ fn generate_dimension_lists(settings: &Settings) ->  DimensionList{
                         vertex_list.add_vertex(&point_1);
                     },
                     DimensionList::Edge(edge_list) => {
-                        let slice_offset = settings.face_slicing.get_edge_offsets();
+                        let slice_offset = settings.dimensionality_settings.face_slicing.get_edge_offsets();
 
                         let offset_a = slice_offset[1][0];
                         let offset_b = slice_offset[1][1];
@@ -583,7 +612,7 @@ fn generate_dimension_lists(settings: &Settings) ->  DimensionList{
                         edge_list.add_edge(point_1, point_2);
                     },
                     DimensionList::Face(face_list) => {
-                        let slice_offset = settings.face_slicing.get_face_offsets();
+                        let slice_offset = settings.dimensionality_settings.face_slicing.get_face_offsets();
 
                         let points: [VertexObject; 3] = std::array::from_fn(|i| {
                             let offset_a = slice_offset[i+1][0];
@@ -683,7 +712,7 @@ impl Channel{
 
 
 fn get_point_and_color(base_color: (f32,f32,f32), settings: &Settings) -> ([f32;3], P_Color){
-    let (r_gamma,g_gamma,b_gamma) = settings.gamma;
+    let (r_gamma,g_gamma,b_gamma) = settings.perceptual_offset_settings.gamma;
     let gamma_adjust = 2.2;
     let gamma = [
         (r_gamma/gamma_adjust) as f32,
@@ -691,19 +720,19 @@ fn get_point_and_color(base_color: (f32,f32,f32), settings: &Settings) -> ([f32;
         (b_gamma/gamma_adjust) as f32,
     ];
     
-    let yuv_offset = if settings.color_model.is_luma_chroma() {-0.5} else {0.};
+    let yuv_offset = if settings.color_model_settings.color_model.is_luma_chroma() {-0.5} else {0.};
     
     let base_color = (base_color.0,base_color.1 + yuv_offset, base_color.2 + yuv_offset, settings.scale_settings.viz_alpha);
-    let raw_color = P_Color::from_tuple(base_color, settings.color_model);
+    let raw_color = P_Color::from_tuple(base_color, settings.color_model_settings.color_model);
     let chroma = base_color.1;
 
     let color: P_Color = 
         raw_color.
         remap_rgb_components(
         chroma, 
-        settings.component_limit.0, 
-        settings.component_limit.1, 
-        settings.component_limit.2
+        settings.perceptual_offset_settings.component_limit.0, 
+        settings.perceptual_offset_settings.component_limit.1, 
+        settings.perceptual_offset_settings.component_limit.2
         ).
         component_gamma_transform(
             gamma[0],
@@ -714,14 +743,38 @@ fn get_point_and_color(base_color: (f32,f32,f32), settings: &Settings) -> ([f32;
     let base_color = raw_color;
     
     let point: Vec3 = {
-        let point = base_color.convert_color(settings.color_space_model).from_space_to_space(settings.color_space, ColorSpace::XYZ);
-        let point = if settings.gamma_deform {color.convert_color(settings.color_space_model).from_space_to_space(settings.color_space, ColorSpace::XYZ)} else {point};
+        let point = base_color.convert_color(settings.color_model_settings.color_space_model).from_space_to_space(settings.color_model_settings.color_space, ColorSpace::XYZ);
+        let point = if settings.perceptual_offset_settings.gamma_deform {color.convert_color(settings.color_model_settings.color_space_model).from_space_to_space(settings.color_model_settings.color_space, ColorSpace::XYZ)} else {point};
         let (x,y,z, _) = point.to_tuple(); 
-        let (x,y,z) = transform_coordinates(&(x,y,z), settings);
+        let (x,y,z) = transform_coordinates((x,y,z), settings);
         Vec3 {x, y, z}
     };
 
     (point.into(), color.set_alpha(settings.scale_settings.viz_alpha))
+}
+
+#[derive(Component, Debug, Clone, Reflect, PartialEq, Copy)]
+pub enum RotationChirality{
+    Middle,
+    Left,
+    Right,
+}
+
+impl RotationChirality {
+    fn next_counterclockwise(&self) -> RotationChirality{
+        match self {
+            RotationChirality::Middle => RotationChirality::Left,
+            RotationChirality::Left => RotationChirality::Right,
+            RotationChirality::Right => RotationChirality::Middle,
+        }
+    }
+    fn next_clockwise(&self) -> RotationChirality{
+        match self {
+            RotationChirality::Middle => RotationChirality::Right,
+            RotationChirality::Left => RotationChirality::Middle,
+            RotationChirality::Right => RotationChirality::Left,
+        }
+    }
 }
 
 

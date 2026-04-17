@@ -21,8 +21,8 @@ impl Setting for GridSettings {
             ui.selectable_value(&mut self.grid, GridCategory::TwoDGrids, "2D Grids");
             // ui.selectable_value(&mut self.grid, GridCategory::ThreeDGrid, "3D Grid");
         });
-        ui.add(Slider::new( &mut self.grid_scale ,0.0..=2.0));
-        ui.add(Slider::new( &mut self.grid_divs ,1..=25));
+        ui.add(Slider::new( &mut self.grid_scale ,0.0..=2.0).text("Scale"));
+        ui.add(Slider::new( &mut self.grid_divs ,1..=25).text("Divisions"));
     }
 }
 
