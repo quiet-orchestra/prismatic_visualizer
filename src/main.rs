@@ -11,7 +11,7 @@ use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use camera::camera_controls;
 
 mod ui;
-use ui::{three_dim_ui, Settings};
+use ui::{ui, Settings, CurrentVizCategory};
 
 mod three_dim_viz;
 use three_dim_viz::{
@@ -21,8 +21,8 @@ use three_dim_viz::{
     SCALE,
 };
 
-// mod two_dim_viz;
-// use two_dim_viz::TwoDimViz;
+mod two_dim_viz;
+use two_dim_viz::TwoDimViz;
 
 use bevy_pointcloud::{
     render::PointCloudRenderMode, 
@@ -31,7 +31,7 @@ use bevy_pointcloud::{
     point_cloud_material::PointCloudMaterial,
 };
 
-use crate::ui::SettingsMenus;
+use crate::{two_dim_viz::SceneConfig, ui::SettingsMenus};
 
 
 fn main() {
@@ -46,11 +46,13 @@ fn main() {
         .add_plugins(EguiPlugin::default())
         .add_plugins(PanOrbitCameraPlugin)
         .add_plugins(PointCloudPlugin)
-        // .add_plugins(TwoDimViz)
+        .add_plugins(TwoDimViz)
         .add_systems(Startup, setup)
+        .add_systems(OnEnter(CurrentVizCategory::ThreeDim), setup_three_cam)
+        .add_systems(OnEnter(CurrentVizCategory::TwoDim), setup_two_cam)
         .add_systems(Update, (update_visualization, update_gizmo_config, update_grid))
         .add_systems(FixedUpdate, camera_controls)
-        .add_systems(EguiPrimaryContextPass, three_dim_ui)
+        .add_systems(EguiPrimaryContextPass, ui)
         .run();
 }
  
@@ -66,7 +68,8 @@ fn setup(
     commands.spawn((
         PrimaryEguiContext,
         PanOrbitCamera::default(),
-        Transform::from_xyz(SCALE*2., SCALE*2., SCALE*2.).looking_at(Vec3::new(0., 0., 0.), Vec3::Z),
+        Transform::from_xyz(SCALE*2., SCALE*2., SCALE*2.)
+        .looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
         NoIndirectDrawing,
         Msaa::Off,
         PointCloudRenderMode {
@@ -90,29 +93,66 @@ fn setup(
 
 }
  
+fn setup_three_cam(
+    mut commands: Commands,
+    cam_query: Query<Entity,With<Camera>>
+){
+    commands.entity(cam_query.single().unwrap()).despawn();
+    commands.spawn((
+        PanOrbitCamera::default(),
+        Transform::from_xyz(SCALE*2., SCALE*2., SCALE*2.)
+        .looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
+    ));
+}
+
+fn setup_two_cam(
+    mut commands: Commands,
+    cam_query: Query<Entity,With<Camera>>
+){
+    commands.entity(cam_query.single().unwrap()).despawn();
+    commands.spawn(Camera2d::default());
+}
+
 fn update_visualization(
     gizmos: Gizmos,
     mut commands: Commands,
-    visualization_settings: ResMut<Settings>,
-    meshes: ResMut<Assets<Mesh>>,
+    settings: ResMut<Settings>,
+    mut meshes: ResMut<Assets<Mesh>>,
     materials: ResMut<Assets<StandardMaterial>>,
     point_clouds: ResMut<Assets<PointCloud>>,
     point_cloud_materials: ResMut<Assets<PointCloudMaterial>>,
     entities: Query<Entity, With<VisualizationMesh>>,
+    windows: Query<&Window>,
+    mut color_materials: ResMut<Assets<ColorMaterial>>,
+    mut images: ResMut<Assets<Image>>,
+    mut scene_config: ResMut<SceneConfig>,
 ) 
  {
 
-     if visualization_settings.is_changed() {
+
+
+    if settings.is_changed() {
  
-         //Delete previous visualization 
-         for mesh in entities.iter(){
-             commands.entity(mesh).despawn();
-         }
+        //Delete previous visualization 
+        for mesh in entities.iter(){
+            commands.entity(mesh).despawn();
+        }
   
-        spawn_3d_visualization(gizmos, commands, meshes, materials, point_clouds, point_cloud_materials, & *visualization_settings);
+        match settings.current_viz {
+            CurrentVizCategory::TwoDim => {
+                scene_config.spawn_scene(windows, &mut commands, &mut meshes, &mut color_materials, &mut images);
+            },
+            CurrentVizCategory::ThreeDim => {
+                spawn_3d_visualization(gizmos, commands, meshes, materials, point_clouds, point_cloud_materials, & *settings);
+            },
+        }
+
+        
         
     }
  }
+
+
 
  fn update_grid(
     gizmos: Gizmos,

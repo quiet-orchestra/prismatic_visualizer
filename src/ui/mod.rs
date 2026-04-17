@@ -1,4 +1,4 @@
-use bevy::{prelude::{ResMut, Resource},};
+use bevy::{prelude::{ResMut, Resource}, state::state::States, utils::default,};
 use bevy_egui::{
     EguiContexts,
     egui::{
@@ -24,8 +24,17 @@ use crate::{
     ui::ui_traits::{Setting, SettingsMenu}
 };
 
+#[derive(States, Resource, Clone, Copy, PartialEq, Debug, Eq, Hash, Default)]
+pub enum CurrentVizCategory{
+    #[default]
+    ThreeDim,
+    TwoDim,
+}
+
+
 #[derive(Resource, Clone, Copy)]
 pub struct Settings{
+    pub current_viz: CurrentVizCategory,
 
     pub scale_settings: ScaleSettings,
 
@@ -48,7 +57,10 @@ pub struct Settings{
 impl Default for Settings{
     fn default() -> Self {
         Self {
+            current_viz: CurrentVizCategory::ThreeDim,
 
+
+            //Three Dim
             scale_settings: ScaleSettings::default(),
 
             grid_settings: GridSettings::default(),
@@ -64,6 +76,9 @@ impl Default for Settings{
             controls_settings: ControlSettings::default(),
 
             attribution: Attribution::default(), 
+
+            //Two Dim
+
 
         }
     }
@@ -95,7 +110,7 @@ impl SettingsMenus {
 }
 
 
-pub fn three_dim_ui(
+pub fn ui(
     mut contexts: EguiContexts,
     mut settings: ResMut<Settings>,
     mut settings_menus: ResMut<SettingsMenus>,
@@ -106,9 +121,17 @@ pub fn three_dim_ui(
         .resizable(true)
         .show(contexts.ctx_mut().unwrap(), | ui|{
         egui::Sense::hover();
-        
 
-        settings_menus.three_dim.ui(ui);
+        ui.horizontal(|ui|{
+            ui.selectable_value(&mut settings.current_viz, CurrentVizCategory::ThreeDim, "3D");
+            ui.selectable_value(&mut settings.current_viz, CurrentVizCategory::TwoDim, "2D");
+        });
+        
+        match settings.current_viz {
+            CurrentVizCategory::TwoDim => {},
+            CurrentVizCategory::ThreeDim => settings_menus.three_dim.ui(ui),
+        }
+        
 
         ui.separator();
         global_theme_preference_buttons(ui);

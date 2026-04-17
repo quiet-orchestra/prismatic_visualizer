@@ -77,7 +77,7 @@ impl ColorVisualizer for VisualizerScene {
 }
 
 #[derive(Resource)]
-struct SceneConfig {
+pub struct SceneConfig {
     pos: usize,
     scenes: Vec<VisualizerScene>,
 }
@@ -93,11 +93,11 @@ impl SceneConfig {
             ],
         }
     }
-    fn advance(&mut self) {
+    pub fn advance(&mut self) {
         self.pos = 
             if self.pos + 1 < self.scenes.len() { self.pos + 1} else {0};
     }
-    fn spawn_scene(
+    pub fn spawn_scene(
         &self,
         windows: Query<&Window>,
         commands: &mut Commands,
@@ -131,10 +131,10 @@ fn setup(
     mut images: ResMut<Assets<Image>>,
     mut scene_config: ResMut<SceneConfig>,
 ) {
-    commands.spawn(Camera2d::default());
+    
 
     *scene_config = SceneConfig::new();
-    scene_config.spawn_scene(windows, &mut commands, &mut meshes, &mut materials, &mut images);
+    // scene_config.spawn_scene(windows, &mut commands, &mut meshes, &mut materials, &mut images);
                             
     // #[cfg(not(target_arch = "wasm32"))]
     // commands.spawn(
