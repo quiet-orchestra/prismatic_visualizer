@@ -5,7 +5,7 @@ use bevy::{
 
 use prismatic_color::{Color as P_Color, constants as Color_Names};
 
-use crate::two_dim_viz::VisualizerComponent;
+use crate::two_dim_viz::TwoDimMesh;
 
 trait BevyColorConvert {
     fn to_bevy_color(&self) -> Color;
@@ -126,7 +126,7 @@ fn draw_hue_tile(
         commands.spawn((
             triangle_mesh,
             MeshMaterial2d(materials.add(color.to_linear_rgb().to_bevy_color())),
-        )).insert(VisualizerComponent{});
+        )).insert(TwoDimMesh{});
     }
 
 }

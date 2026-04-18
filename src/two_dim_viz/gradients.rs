@@ -6,7 +6,7 @@ use bevy::{
 
 use prismatic_color::{linear_gradient, Color as P_Color, constants as Color_Names};
 
-use crate::two_dim_viz::VisualizerComponent;
+use crate::two_dim_viz::TwoDimMesh;
 
 
 pub fn spawn(
@@ -39,7 +39,7 @@ pub fn spawn(
                 ..Default::default()
             })),
             Transform::from_xyz(0.0, top - height * 1.1 * i as f32, 0.0 ),
-        )).insert(VisualizerComponent{});
+        )).insert(TwoDimMesh{});
     }
 
 }

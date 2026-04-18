@@ -40,7 +40,7 @@ pub use attribution::Attribution;
 
 // A marker component for our components so we can query them separately from the ground plane
 #[derive(Component)]
-pub struct VisualizationMesh;
+pub struct ThreeDimMesh;
 
 
 
@@ -162,7 +162,7 @@ impl DimensionList {
                     commands.spawn((
                         PointCloud3d(point_cloud),
                         PointCloudMaterial3d(my_material),
-                        VisualizationMesh,
+                        ThreeDimMesh,
                     )); 
              },
              DimensionList::Edge(edge_list) => {
@@ -256,7 +256,7 @@ impl DimensionList {
                      
                     Mesh3d( meshes.add(mesh)),
                     MeshMaterial3d(material),
-                    VisualizationMesh,
+                    ThreeDimMesh,
                 ));
             },
             DimensionList::Volume(face_list) => {
@@ -334,7 +334,7 @@ impl DimensionList {
                      
                     Mesh3d( meshes.add(mesh)),
                     MeshMaterial3d(material),
-                    VisualizationMesh,
+                    ThreeDimMesh,
                 ));
             },
         }
@@ -543,17 +543,17 @@ impl BevyColorConvert for P_Color {
 }
 
 pub fn spawn_3d_visualization(
-    mut gizmos: Gizmos,
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut point_clouds: ResMut<Assets<PointCloud>>,
-    mut point_cloud_materials: ResMut<Assets<PointCloudMaterial>>,
+    gizmos: &mut Gizmos,
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    point_clouds: &mut ResMut<Assets<PointCloud>>,
+    point_cloud_materials: &mut ResMut<Assets<PointCloudMaterial>>,
     settings: &Settings,
     )
 {
     generate_dimension_lists(settings)
-        .render(&mut commands, &mut meshes, &mut materials, &mut point_clouds ,&mut point_cloud_materials, &mut gizmos, settings);
+        .render(commands, meshes, materials, point_clouds , point_cloud_materials, gizmos, settings);
 }
 
 fn generate_dimension_lists(settings: &Settings) ->  DimensionList{

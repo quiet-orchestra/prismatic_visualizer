@@ -17,7 +17,7 @@ mod three_dim_viz;
 use three_dim_viz::{
     spawn_3d_visualization, 
     spawn_grid, 
-    VisualizationMesh, 
+    ThreeDimMesh, 
     SCALE,
 };
 
@@ -31,8 +31,11 @@ use bevy_pointcloud::{
     point_cloud_material::PointCloudMaterial,
 };
 
-use crate::{two_dim_viz::SceneConfig, ui::SettingsMenus};
+use crate::{two_dim_viz::{TwoDimSceneConfig, TwoDimMesh}, ui::SettingsMenus};
 
+pub const UI_RENDER_LAYER: isize = 99;
+pub const THREE_DIM_RENDER_LAYER: isize = 10;
+pub const TWO_DIM_RENDER_LAYER: isize = 5;
 
 fn main() {
     App::new()
@@ -72,17 +75,18 @@ enum ViewportState {
 }
 
 fn setup(
-    gizmos: Gizmos,
+    mut gizmos: Gizmos,
     mut commands: Commands,
-    meshes: ResMut<Assets<Mesh>>,
-    materials: ResMut<Assets<StandardMaterial>>,
-    point_clouds: ResMut<Assets<PointCloud>>,
-    point_cloud_materials: ResMut<Assets<PointCloudMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut point_clouds: ResMut<Assets<PointCloud>>,
+    mut point_cloud_materials: ResMut<Assets<PointCloudMaterial>>,
     window: Single<&Window>
 ) {
 
     let window_size = window.resolution.physical_size();
-    let (width, height) = (window_size.x, window_size.y);
+    let (window_width, window_height) = (window_size.x, window_size.y);
+    let ui_height =  window_height / 5;
     
     commands.spawn((
         PrimaryEguiContext,
@@ -90,9 +94,10 @@ fn setup(
         Camera {
             viewport: Some(Viewport {
                 physical_position: UVec2::ZERO,
-                physical_size: UVec2 { x: width, y: height / 5 },
+                physical_size: UVec2 { x: window_width, y: ui_height },
                 ..default()
             }),
+            order: UI_RENDER_LAYER,
             ..default()
         },
         UiCamera,
@@ -101,6 +106,15 @@ fn setup(
 
     commands.spawn((
         PanOrbitCamera::default(),
+        Camera {
+            viewport: Some(Viewport {
+                physical_position: UVec2 { x: 0, y: ui_height },
+                physical_size: UVec2 { x: window_width, y: window_height - ui_height },
+                ..default()
+            }),
+            order: THREE_DIM_RENDER_LAYER,
+            ..default()
+        },
         Transform::from_xyz(SCALE*2., SCALE*2., SCALE*2.)
         .looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
         NoIndirectDrawing,
@@ -116,7 +130,16 @@ fn setup(
     ));
 
         commands.spawn((
-        Camera2d::default(),
+        Camera2d,
+        Camera {
+            viewport: Some(Viewport {
+                physical_position: UVec2 { x: 0,  y: ui_height },
+                physical_size: UVec2 { x: 0, y: window_height - ui_height },
+                ..default()
+            }),
+            order: TWO_DIM_RENDER_LAYER,
+            ..default()
+        },
         TwoDimCamera,
     ));
 
@@ -128,55 +151,99 @@ fn setup(
     commands.insert_resource(settings);
     commands.insert_resource(SettingsMenus::new(settings));
 
-    spawn_3d_visualization(gizmos, commands, meshes, materials, point_clouds, point_cloud_materials, &settings);
+    spawn_3d_visualization(&mut gizmos, &mut commands, &mut meshes, &mut materials, &mut point_clouds, &mut point_cloud_materials, &settings);
 
 }
 
 fn update_viewports(
     settings: ResMut<Settings>,
-    // mut
+    mut cameras: ParamSet<(
+        Single<&mut Camera, With<ThreeDimCamera>>,
+        Single<&mut Camera, With<TwoDimCamera>>,
+    )>,
+    window: Single<&Window>
 ) {
+    let window_size = window.resolution.physical_size();
+    let (window_width, _) = (window_size.x, window_size.y);
+
+    let mut three_dim_camera= cameras.p0().into_inner();
+    let three_dim_viewport = three_dim_camera.viewport.as_mut().unwrap();
+
     match settings.viewport_state {
         ViewportState::ThreeDimOnly => {
-
+            three_dim_viewport.physical_size = three_dim_viewport.physical_size.with_x(window_width);
         },
         ViewportState::TwoDimOnly => {
-
+            three_dim_viewport.physical_size = three_dim_viewport.physical_size.with_x(0);
         },
         ViewportState::SplitDim => {
+            three_dim_viewport.physical_size = three_dim_viewport.physical_size.with_x(window_width / 2);
+        },
+    }
 
+    let mut two_dim_camera= cameras.p1().into_inner();
+    let two_dim_viewport = two_dim_camera.viewport.as_mut().unwrap();
+
+    match settings.viewport_state {
+        ViewportState::ThreeDimOnly => {
+            two_dim_viewport.physical_size = two_dim_viewport.physical_size.with_x(0);
+        },
+        ViewportState::TwoDimOnly => {
+            two_dim_viewport.physical_position = two_dim_viewport.physical_position.with_x(0);
+            two_dim_viewport.physical_size = two_dim_viewport.physical_size.with_x(window_width);
+        },
+        ViewportState::SplitDim => {
+            two_dim_viewport.physical_position = two_dim_viewport.physical_position.with_x(window_width / 2);
+            two_dim_viewport.physical_size = two_dim_viewport.physical_size.with_x(window_width / 2);           
         },
     }
 }
 
 fn update_visualization(
-    gizmos: Gizmos,
+    mut gizmos: Gizmos,
     mut commands: Commands,
-    settings: ResMut<Settings>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    materials: ResMut<Assets<StandardMaterial>>,
-    point_clouds: ResMut<Assets<PointCloud>>,
-    point_cloud_materials: ResMut<Assets<PointCloudMaterial>>,
-    entities: Query<Entity, With<VisualizationMesh>>,
+    mut settings:  ResMut<Settings>,
+    mut meshes:  ResMut<Assets<Mesh>>,
+    mut materials:  ResMut<Assets<StandardMaterial>>,
+    mut point_clouds:  ResMut<Assets<PointCloud>>,
+    mut point_cloud_materials:  ResMut<Assets<PointCloudMaterial>>,
+    mut color_materials:  ResMut<Assets<ColorMaterial>>,
+    mut images:  ResMut<Assets<Image>>,
+    three_dim_entities: Query<Entity, With<ThreeDimMesh>>,
+    two_dim_entities: Query<Entity, With<TwoDimMesh>>,
+    two_dim_scene_config:  ResMut<TwoDimSceneConfig>,
     windows: Query<&Window>,
-    mut color_materials: ResMut<Assets<ColorMaterial>>,
-    mut images: ResMut<Assets<Image>>,
-    mut scene_config: ResMut<SceneConfig>,
 ) 
  {
 
 
 
     if settings.is_changed() {
- 
-        //Delete previous visualization 
-        for mesh in entities.iter(){
+
+        //Despawn any existing viz meshes
+        for mesh in three_dim_entities.iter(){
             commands.entity(mesh).despawn();
         }
-
-        scene_config.spawn_scene(windows, &mut commands, &mut meshes, &mut color_materials, &mut images);
-        spawn_3d_visualization(gizmos, commands, meshes, materials, point_clouds, point_cloud_materials, & *settings);        
+        for mesh in two_dim_entities.iter(){
+            commands.entity(mesh).despawn();
+        }
         
+        //Spawn new visualization
+        match settings.viewport_state {
+            ViewportState::ThreeDimOnly => {
+                spawn_3d_visualization(&mut gizmos, &mut commands, &mut meshes, &mut materials, &mut point_clouds, &mut point_cloud_materials, &mut settings);  
+            },
+            ViewportState::TwoDimOnly => {
+                two_dim_scene_config.spawn_scene(windows, &mut commands, &mut meshes, &mut color_materials, &mut images);
+            },
+            ViewportState::SplitDim => {
+                spawn_3d_visualization(&mut gizmos, &mut commands, &mut meshes, &mut materials, &mut point_clouds, &mut point_cloud_materials, &mut settings);  
+                two_dim_scene_config.spawn_scene(windows, &mut commands, &mut meshes, &mut color_materials, &mut images);
+            },
+        }
+      
+        
+
     }
  }
 

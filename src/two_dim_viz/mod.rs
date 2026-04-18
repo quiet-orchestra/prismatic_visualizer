@@ -6,7 +6,7 @@ mod color_peaks;
 mod gradients;
 
 #[derive(Component, Clone)]
-pub struct VisualizerComponent;
+pub struct TwoDimMesh;
 
 #[derive(Clone)]
 pub enum VisualizerScene{
@@ -29,7 +29,7 @@ trait ColorVisualizer{
     );
     fn despawn(
         commands: &mut Commands,
-        query: Query<Entity, With<VisualizerComponent>>
+        query: Query<Entity, With<TwoDimMesh>>
     );
     fn generate_colors(
         &self,
@@ -55,9 +55,8 @@ impl ColorVisualizer for VisualizerScene {
     }
 
     fn despawn(
-
         commands: &mut Commands,
-        query: Query<Entity, With<VisualizerComponent>>
+        query: Query<Entity, With<TwoDimMesh>>
     ) {
         for entity in query.iter() {
             commands.entity(entity).despawn();
@@ -77,14 +76,14 @@ impl ColorVisualizer for VisualizerScene {
 }
 
 #[derive(Resource)]
-pub struct SceneConfig {
+pub struct TwoDimSceneConfig {
     pos: usize,
     scenes: Vec<VisualizerScene>,
 }
 
-impl SceneConfig {
-    fn new() -> SceneConfig {
-        SceneConfig { 
+impl TwoDimSceneConfig {
+    fn new() -> TwoDimSceneConfig {
+        TwoDimSceneConfig { 
             pos: 0,
             scenes: vec![
                 VisualizerScene::HueWheel,
@@ -118,7 +117,7 @@ impl Plugin for TwoDimViz {
     fn build(&self, app: &mut App) {
         app
         .add_systems(Update, toggle_visualizers)
-        .insert_resource(SceneConfig::new());
+        .insert_resource(TwoDimSceneConfig::new());
     }
 }
 
@@ -128,15 +127,15 @@ fn toggle_visualizers(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut images: ResMut<Assets<Image>>,
-    visualizer_components: Query<Entity, With<VisualizerComponent>>,
-    mut scene_config: ResMut<SceneConfig>,
+    two_dim_mesh: Query<Entity, With<TwoDimMesh>>,
+    mut scene_config: ResMut<TwoDimSceneConfig>,
     keyboard: Res<ButtonInput<KeyCode>>,
 ) {
 
     if keyboard.just_pressed(KeyCode::KeyT) {
-        VisualizerScene::despawn(&mut commands, visualizer_components);
         scene_config.advance();
         println!("Advanced to {}", scene_config.pos);
+        VisualizerScene::despawn(&mut commands, two_dim_mesh);
         scene_config.spawn_scene(window, &mut commands, &mut meshes, &mut materials, &mut images);
     }
 }
