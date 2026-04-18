@@ -10,7 +10,8 @@ use crate::two_dim_viz::TwoDimMesh;
 
 
 pub fn spawn(
-    windows: Query<&Window>,
+    width: f32,
+    height: f32,
     commands: &mut Commands,
     materials: &mut ResMut<Assets<ColorMaterial>>,
     meshes: &mut ResMut<Assets<Mesh>>,
@@ -18,27 +19,25 @@ pub fn spawn(
     color_sets: Vec<Vec<P_Color>>,
 ){
     let scale = (1./2.,1./8.);
-    let (width, height) = (
-        windows.single().unwrap().width() * scale.0, 
-        windows.single().unwrap().height() * scale.1
+    let (scaled_width, scaled_height) = ( width * scale.0, height * scale.1
     );
-    let top = windows.single().unwrap().height() / 2. * (1. - scale.0);
+    let top = height / 2. * (1. - scale.0);
     
     for i in 0..color_sets.len(){
-        let rectangle_mesh = Mesh2d(meshes.add(Rectangle::new(width, height)));
+        let rectangle_mesh = Mesh2d(meshes.add(Rectangle::new(scaled_width, scaled_height)));
         let color_pair = color_sets.get(i).expect("Gradient Missing");
         let (start, end) = (
             color_pair.get(0).expect("Missing gradient start"), 
             color_pair.get(1).expect("Missing gradient end"),
         );
-        let image_handle = images.add(gradient_texture(start, end, width, height));
+        let image_handle = images.add(gradient_texture(start, end, scaled_width, scaled_height));
         commands.spawn((
             rectangle_mesh,
             MeshMaterial2d(materials.add(ColorMaterial{
                 texture: Some(image_handle),
                 ..Default::default()
             })),
-            Transform::from_xyz(0.0, top - height * 1.1 * i as f32, 0.0 ),
+            Transform::from_xyz(0.0, top - scaled_height * 1.1 * i as f32, 0.0 ),
         )).insert(TwoDimMesh{});
     }
 

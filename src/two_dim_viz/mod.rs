@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use prismatic_color::Color as P_Color;
 
+use crate::TwoDimCamera;
+
 mod hue_wheel;
 mod color_peaks;
 mod gradients;
@@ -15,12 +17,11 @@ pub enum VisualizerScene{
     Gradients,
 }
 
-
-
 trait ColorVisualizer{
     fn spawn(
         &self,
-        window: Query<&Window>,
+        width: f32,
+        height: f32,
         commands: &mut Commands,
         materials: &mut ResMut<Assets<ColorMaterial>>,
         meshes: &mut ResMut<Assets<Mesh>>,
@@ -40,7 +41,8 @@ trait ColorVisualizer{
 impl ColorVisualizer for VisualizerScene {
     fn spawn(
         &self,
-        window: Query<&Window>,
+        width: f32,
+        height: f32,
         commands: &mut Commands,
         materials: &mut ResMut<Assets<ColorMaterial>>,
         meshes: &mut ResMut<Assets<Mesh>>,
@@ -48,9 +50,9 @@ impl ColorVisualizer for VisualizerScene {
         color_sets: Vec<Vec<P_Color>>,
     ) {
         match self {
-            VisualizerScene::HueWheel => hue_wheel::spawn(window, commands, materials, meshes, color_sets),
-            VisualizerScene::ColorPeaks => color_peaks::spawn(window, commands, materials, meshes, color_sets),
-            VisualizerScene::Gradients => gradients::spawn(window, commands, materials, meshes, images, color_sets),
+            VisualizerScene::HueWheel => hue_wheel::spawn(width, height, commands, materials, meshes, color_sets),
+            VisualizerScene::ColorPeaks => color_peaks::spawn(width, height, commands, materials, meshes, color_sets),
+            VisualizerScene::Gradients => gradients::spawn(width, height, commands, materials, meshes, images, color_sets),
         }
     }
 
@@ -98,7 +100,8 @@ impl TwoDimSceneConfig {
     }
     pub fn spawn_scene(
         &self,
-        windows: Query<&Window>,
+        width: f32,
+        height: f32,
         commands: &mut Commands,
         meshes: &mut ResMut<Assets<Mesh>>,
         materials: &mut ResMut<Assets<ColorMaterial>>,
@@ -106,7 +109,7 @@ impl TwoDimSceneConfig {
     ) {
         let scene = self.scenes.get(self.pos).expect("Scene out of range");
         let colors = scene.generate_colors();
-        scene.spawn(windows, commands, materials, meshes, images, colors);
+        scene.spawn(width, height, commands, materials, meshes, images, colors);
     }
 }
 
@@ -122,7 +125,7 @@ impl Plugin for TwoDimViz {
 }
 
 fn toggle_visualizers(
-    window: Query<&Window>,
+    camera: Single<&Camera, With<TwoDimCamera>>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -132,11 +135,14 @@ fn toggle_visualizers(
     keyboard: Res<ButtonInput<KeyCode>>,
 ) {
 
+    let size = camera.into_inner().viewport.as_ref().unwrap().physical_size;
+    let (width , height) = (size.x as f32 , size.y as f32);
+
     if keyboard.just_pressed(KeyCode::KeyT) {
         scene_config.advance();
         println!("Advanced to {}", scene_config.pos);
         VisualizerScene::despawn(&mut commands, two_dim_mesh);
-        scene_config.spawn_scene(window, &mut commands, &mut meshes, &mut materials, &mut images);
+        scene_config.spawn_scene(width, height, &mut commands, &mut meshes, &mut materials, &mut images);
     }
 }
  

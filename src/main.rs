@@ -158,43 +158,50 @@ fn setup(
 fn update_viewports(
     settings: ResMut<Settings>,
     mut cameras: ParamSet<(
+        Single<&mut Camera, With<UiCamera>>,
         Single<&mut Camera, With<ThreeDimCamera>>,
         Single<&mut Camera, With<TwoDimCamera>>,
     )>,
     window: Single<&Window>
 ) {
     let window_size = window.resolution.physical_size();
-    let (window_width, _) = (window_size.x, window_size.y);
+    let (window_width, ui_height, viz_height) = (window_size.x, window_size.y / 5, window_size.y * 4 / 5);
 
-    let mut three_dim_camera= cameras.p0().into_inner();
+    let mut ui_camera = cameras.p0().into_inner();
+    let ui_viewport = ui_camera.viewport.as_mut().unwrap();
+    ui_viewport.physical_size = ui_viewport.physical_size.with_x(window_width).with_y(ui_height);
+
+    let mut three_dim_camera= cameras.p1().into_inner();
     let three_dim_viewport = three_dim_camera.viewport.as_mut().unwrap();
 
     match settings.viewport_state {
         ViewportState::ThreeDimOnly => {
-            three_dim_viewport.physical_size = three_dim_viewport.physical_size.with_x(window_width);
+            three_dim_viewport.physical_position = UVec2::new(0, ui_height);
+            three_dim_viewport.physical_size = UVec2::new(window_width,  viz_height);
         },
         ViewportState::TwoDimOnly => {
-            three_dim_viewport.physical_size = three_dim_viewport.physical_size.with_x(0);
+            three_dim_viewport.physical_size = UVec2::ZERO;
         },
         ViewportState::SplitDim => {
-            three_dim_viewport.physical_size = three_dim_viewport.physical_size.with_x(window_width / 2);
+            three_dim_viewport.physical_position = UVec2::new(0, ui_height);
+            three_dim_viewport.physical_size = UVec2::new(window_width / 2, viz_height);
         },
     }
 
-    let mut two_dim_camera= cameras.p1().into_inner();
+    let mut two_dim_camera= cameras.p2().into_inner();
     let two_dim_viewport = two_dim_camera.viewport.as_mut().unwrap();
 
     match settings.viewport_state {
         ViewportState::ThreeDimOnly => {
-            two_dim_viewport.physical_size = two_dim_viewport.physical_size.with_x(0);
+            two_dim_viewport.physical_size = UVec2::ZERO;
         },
         ViewportState::TwoDimOnly => {
-            two_dim_viewport.physical_position = two_dim_viewport.physical_position.with_x(0);
-            two_dim_viewport.physical_size = two_dim_viewport.physical_size.with_x(window_width);
+            two_dim_viewport.physical_position = UVec2::new(0, ui_height);
+            two_dim_viewport.physical_size = UVec2::new(window_width, viz_height);
         },
         ViewportState::SplitDim => {
-            two_dim_viewport.physical_position = two_dim_viewport.physical_position.with_x(window_width / 2);
-            two_dim_viewport.physical_size = two_dim_viewport.physical_size.with_x(window_width / 2);           
+            two_dim_viewport.physical_position = UVec2::new(window_width / 2, ui_height);
+            two_dim_viewport.physical_size = UVec2::new(window_width / 2, viz_height);           
         },
     }
 }
@@ -212,13 +219,15 @@ fn update_visualization(
     three_dim_entities: Query<Entity, With<ThreeDimMesh>>,
     two_dim_entities: Query<Entity, With<TwoDimMesh>>,
     two_dim_scene_config:  ResMut<TwoDimSceneConfig>,
-    windows: Query<&Window>,
+    window: Single<&Window>
 ) 
  {
 
-
-
     if settings.is_changed() {
+
+        let window_size = window.resolution.physical_size();
+        let (width, height) = (window_size.x as f32, (window_size.y * 4 / 5) as f32);
+        let width = if settings.viewport_state == ViewportState::SplitDim { width / 2. } else { width };
 
         //Despawn any existing viz meshes
         for mesh in three_dim_entities.iter(){
@@ -234,11 +243,11 @@ fn update_visualization(
                 spawn_3d_visualization(&mut gizmos, &mut commands, &mut meshes, &mut materials, &mut point_clouds, &mut point_cloud_materials, &mut settings);  
             },
             ViewportState::TwoDimOnly => {
-                two_dim_scene_config.spawn_scene(windows, &mut commands, &mut meshes, &mut color_materials, &mut images);
+                two_dim_scene_config.spawn_scene(width, height, &mut commands, &mut meshes, &mut color_materials, &mut images);
             },
             ViewportState::SplitDim => {
                 spawn_3d_visualization(&mut gizmos, &mut commands, &mut meshes, &mut materials, &mut point_clouds, &mut point_cloud_materials, &mut settings);  
-                two_dim_scene_config.spawn_scene(windows, &mut commands, &mut meshes, &mut color_materials, &mut images);
+                two_dim_scene_config.spawn_scene(width, height, &mut commands, &mut meshes, &mut color_materials, &mut images);
             },
         }
       

@@ -29,16 +29,17 @@ pub fn generate_colors() -> Vec<Vec<P_Color>>{
 }
 
 pub fn spawn(
-    windows: Query<&Window>,
+    width: f32,
+    height: f32,
     commands: &mut Commands,
     materials: &mut ResMut<Assets<ColorMaterial>>,
     meshes: &mut ResMut<Assets<Mesh>>,
     color_sets: Vec<Vec<P_Color>>,
 ){
     let offset_ratio = 8./10.;
-    let (width, height) = (
-        windows.single().unwrap().width() * offset_ratio, 
-        windows.single().unwrap().height() * offset_ratio,
+    let (width, height) = ( 
+        width * offset_ratio, 
+        height * offset_ratio,
     );
 
     let closest_ratio = find_closest_ratio(width, height);

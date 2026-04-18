@@ -81,7 +81,8 @@ pub fn generate_hues() -> Vec<Vec<P_Color>>{
 
 
 pub fn spawn(
-    windows: Query<&Window>,
+    width: f32,
+    height: f32,
     commands: &mut Commands,
     materials: &mut ResMut<Assets<ColorMaterial>>,
     meshes: &mut ResMut<Assets<Mesh>>,
@@ -91,7 +92,6 @@ pub fn spawn(
 
     let segment_ratio = 1.;
     let protoary_ratio = 1./8.;
-    let (width, height) = (windows.single().unwrap().width(),windows.single().unwrap().height());
     let start_radius = width.min(height) * protoary_ratio / 2.;
 
     for (stage, colors) in color_sets.into_iter().enumerate() {
