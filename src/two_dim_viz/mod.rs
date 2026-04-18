@@ -117,35 +117,9 @@ pub struct TwoDimViz;
 impl Plugin for TwoDimViz {
     fn build(&self, app: &mut App) {
         app
-        .add_systems(Startup, setup)
         .add_systems(Update, toggle_visualizers)
         .insert_resource(SceneConfig::new());
     }
-}
-
-fn setup(
-    windows: Query<&Window>,
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut images: ResMut<Assets<Image>>,
-    mut scene_config: ResMut<SceneConfig>,
-) {
-    
-
-    *scene_config = SceneConfig::new();
-    // scene_config.spawn_scene(windows, &mut commands, &mut meshes, &mut materials, &mut images);
-                            
-    // #[cfg(not(target_arch = "wasm32"))]
-    // commands.spawn(
-    //     TextBundle::from_section("Press space to toggle visualizations", TextStyle::default())
-    //         .with_style(Style {
-    //             position_type: PositionType::Absolute,
-    //             top: Val::Px(12.0),
-    //             left: Val::Px(12.0),
-    //             ..default()
-    //         }),
-    // );
 }
 
 fn toggle_visualizers(
@@ -159,9 +133,10 @@ fn toggle_visualizers(
     keyboard: Res<ButtonInput<KeyCode>>,
 ) {
 
-    if keyboard.just_pressed(KeyCode::Space) {
+    if keyboard.just_pressed(KeyCode::KeyT) {
         VisualizerScene::despawn(&mut commands, visualizer_components);
         scene_config.advance();
+        println!("Advanced to {}", scene_config.pos);
         scene_config.spawn_scene(window, &mut commands, &mut meshes, &mut materials, &mut images);
     }
 }

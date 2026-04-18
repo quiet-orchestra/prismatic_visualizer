@@ -1,4 +1,4 @@
-use bevy::{prelude::{ResMut, Resource}, state::state::States, utils::default,};
+use bevy::{prelude::{ResMut, Resource}, state::state::States};
 use bevy_egui::{
     EguiContexts,
     egui::{
@@ -10,7 +10,7 @@ use bevy_egui::{
 pub(crate) mod ui_traits;
 
 use crate::{
-    three_dim_viz::{
+    ViewportState, three_dim_viz::{
         Attribution,
         ColorChannelSettings,
         ColorModelSettings,
@@ -19,22 +19,13 @@ use crate::{
         GridSettings,
         PerceptualOffsetSettings,
         ScaleSettings,
-    },
-
-    ui::ui_traits::{Setting, SettingsMenu}
+    }, ui::ui_traits::{Setting, SettingsMenu}
 };
-
-#[derive(States, Resource, Clone, Copy, PartialEq, Debug, Eq, Hash, Default)]
-pub enum CurrentVizCategory{
-    #[default]
-    ThreeDim,
-    TwoDim,
-}
 
 
 #[derive(Resource, Clone, Copy)]
 pub struct Settings{
-    pub current_viz: CurrentVizCategory,
+    pub viewport_state: ViewportState,
 
     pub scale_settings: ScaleSettings,
 
@@ -57,8 +48,7 @@ pub struct Settings{
 impl Default for Settings{
     fn default() -> Self {
         Self {
-            current_viz: CurrentVizCategory::ThreeDim,
-
+            viewport_state: ViewportState::default(),
 
             //Three Dim
             scale_settings: ScaleSettings::default(),
@@ -123,13 +113,21 @@ pub fn ui(
         egui::Sense::hover();
 
         ui.horizontal(|ui|{
-            ui.selectable_value(&mut settings.current_viz, CurrentVizCategory::ThreeDim, "3D");
-            ui.selectable_value(&mut settings.current_viz, CurrentVizCategory::TwoDim, "2D");
+            ui.selectable_value(&mut settings.viewport_state, ViewportState::ThreeDimOnly, "3D");
+            ui.selectable_value(&mut settings.viewport_state, ViewportState::TwoDimOnly, "2D");
+            ui.selectable_value(&mut settings.viewport_state, ViewportState::SplitDim, "Split");
         });
         
-        match settings.current_viz {
-            CurrentVizCategory::TwoDim => {},
-            CurrentVizCategory::ThreeDim => settings_menus.three_dim.ui(ui),
+        match settings.viewport_state {
+            ViewportState::ThreeDimOnly => {
+                settings_menus.three_dim.ui(ui)
+            },
+            ViewportState::TwoDimOnly => {
+
+            },
+            ViewportState::SplitDim => {
+                settings_menus.three_dim.ui(ui)
+            },
         }
         
 

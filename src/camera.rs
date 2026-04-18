@@ -1,10 +1,10 @@
 use bevy::prelude::{*};
 
+use crate::ThreeDimCamera;
+
 pub fn camera_controls(
-    mut camera_query: Query<&mut Transform, With<Camera>>,
+    mut camera_query: Query<&mut Transform, With<ThreeDimCamera>>,
     keyboard: Res<ButtonInput<KeyCode>>,
-    // mouse_button: Res<MouseButton>,
-    // mouse_motion: Res<MouseMotion>,
     time: Res<Time>,
     mut contexts: bevy_egui::EguiContexts,
 ){

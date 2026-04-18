@@ -1,7 +1,7 @@
 //Quiet Orchestra
 //Prismatic Color Visualizer
 
-use bevy::{prelude::*, render::view::NoIndirectDrawing};
+use bevy::{camera::Viewport, prelude::*, render::view::NoIndirectDrawing};
 use bevy_egui::{
     EguiPlugin, EguiPrimaryContextPass, PrimaryEguiContext
 };
@@ -11,7 +11,7 @@ use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use camera::camera_controls;
 
 mod ui;
-use ui::{ui, Settings, CurrentVizCategory};
+use ui::{ui, Settings};
 
 mod three_dim_viz;
 use three_dim_viz::{
@@ -48,14 +48,29 @@ fn main() {
         .add_plugins(PointCloudPlugin)
         .add_plugins(TwoDimViz)
         .add_systems(Startup, setup)
-        .add_systems(OnEnter(CurrentVizCategory::ThreeDim), setup_three_cam)
-        .add_systems(OnEnter(CurrentVizCategory::TwoDim), setup_two_cam)
-        .add_systems(Update, (update_visualization, update_gizmo_config, update_grid))
+        .add_systems(Update, (update_visualization, update_gizmo_config, update_grid, update_viewports))
         .add_systems(FixedUpdate, camera_controls)
         .add_systems(EguiPrimaryContextPass, ui)
         .run();
 }
+
+#[derive(Component)]
+pub struct UiCamera;
+
+#[derive(Component)]
+pub struct ThreeDimCamera;
+
+#[derive(Component)]
+pub struct TwoDimCamera;
  
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+enum ViewportState {
+    #[default]
+    ThreeDimOnly,
+    TwoDimOnly,
+    SplitDim,
+}
+
 fn setup(
     gizmos: Gizmos,
     mut commands: Commands,
@@ -63,10 +78,28 @@ fn setup(
     materials: ResMut<Assets<StandardMaterial>>,
     point_clouds: ResMut<Assets<PointCloud>>,
     point_cloud_materials: ResMut<Assets<PointCloudMaterial>>,
+    window: Single<&Window>
 ) {
 
+    let window_size = window.resolution.physical_size();
+    let (width, height) = (window_size.x, window_size.y);
+    
     commands.spawn((
         PrimaryEguiContext,
+        Camera2d,
+        Camera {
+            viewport: Some(Viewport {
+                physical_position: UVec2::ZERO,
+                physical_size: UVec2 { x: width, y: height / 5 },
+                ..default()
+            }),
+            ..default()
+        },
+        UiCamera,
+    ));
+
+
+    commands.spawn((
         PanOrbitCamera::default(),
         Transform::from_xyz(SCALE*2., SCALE*2., SCALE*2.)
         .looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
@@ -79,6 +112,12 @@ fn setup(
             edl_neighbour_count: 4,
             ..Default::default()
         },
+        ThreeDimCamera,
+    ));
+
+        commands.spawn((
+        Camera2d::default(),
+        TwoDimCamera,
     ));
 
 
@@ -92,25 +131,22 @@ fn setup(
     spawn_3d_visualization(gizmos, commands, meshes, materials, point_clouds, point_cloud_materials, &settings);
 
 }
- 
-fn setup_three_cam(
-    mut commands: Commands,
-    cam_query: Query<Entity,With<Camera>>
-){
-    commands.entity(cam_query.single().unwrap()).despawn();
-    commands.spawn((
-        PanOrbitCamera::default(),
-        Transform::from_xyz(SCALE*2., SCALE*2., SCALE*2.)
-        .looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
-    ));
-}
 
-fn setup_two_cam(
-    mut commands: Commands,
-    cam_query: Query<Entity,With<Camera>>
-){
-    commands.entity(cam_query.single().unwrap()).despawn();
-    commands.spawn(Camera2d::default());
+fn update_viewports(
+    settings: ResMut<Settings>,
+    // mut
+) {
+    match settings.viewport_state {
+        ViewportState::ThreeDimOnly => {
+
+        },
+        ViewportState::TwoDimOnly => {
+
+        },
+        ViewportState::SplitDim => {
+
+        },
+    }
 }
 
 fn update_visualization(
@@ -137,17 +173,9 @@ fn update_visualization(
         for mesh in entities.iter(){
             commands.entity(mesh).despawn();
         }
-  
-        match settings.current_viz {
-            CurrentVizCategory::TwoDim => {
-                scene_config.spawn_scene(windows, &mut commands, &mut meshes, &mut color_materials, &mut images);
-            },
-            CurrentVizCategory::ThreeDim => {
-                spawn_3d_visualization(gizmos, commands, meshes, materials, point_clouds, point_cloud_materials, & *settings);
-            },
-        }
 
-        
+        scene_config.spawn_scene(windows, &mut commands, &mut meshes, &mut color_materials, &mut images);
+        spawn_3d_visualization(gizmos, commands, meshes, materials, point_clouds, point_cloud_materials, & *settings);        
         
     }
  }
