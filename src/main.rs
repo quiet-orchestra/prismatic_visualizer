@@ -3,7 +3,7 @@
 
 use bevy::{camera::Viewport, prelude::*, render::view::NoIndirectDrawing};
 use bevy_egui::{
-    EguiPlugin, EguiPrimaryContextPass, PrimaryEguiContext
+    EguiGlobalSettings, EguiPlugin, EguiPrimaryContextPass, PrimaryEguiContext
 };
 
 mod camera;
@@ -83,6 +83,11 @@ fn setup(
     window: Single<&Window>
 ) {
 
+    commands.insert_resource(EguiGlobalSettings {
+        auto_create_primary_context: false,
+        ..default()
+    });
+
     let window_size = window.resolution.physical_size();
     let (window_width, window_height) = (window_size.x, window_size.y);
     let ui_height =  window_height / 5;
@@ -99,6 +104,7 @@ fn setup(
             order: UI_RENDER_LAYER,
             ..default()
         },
+        Msaa::Off,
         UiCamera,
     ));
 
@@ -139,6 +145,7 @@ fn setup(
             order: TWO_DIM_RENDER_LAYER,
             ..default()
         },
+        Msaa::Off,
         TwoDimCamera,
     ));
 
