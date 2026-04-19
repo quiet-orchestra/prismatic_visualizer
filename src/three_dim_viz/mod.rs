@@ -548,12 +548,12 @@ pub fn spawn_3d_visualization(
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     point_clouds: &mut ResMut<Assets<PointCloud>>,
-    point_cloud_materials: &mut ResMut<Assets<PointCloudMaterial>>,
+    point_cloud_material: &mut ResMut<Assets<PointCloudMaterial>>,
     settings: &Settings,
     )
 {
     generate_dimension_lists(settings)
-        .render(commands, meshes, materials, point_clouds , point_cloud_materials, gizmos, settings);
+        .render(commands, meshes, materials, point_clouds, point_cloud_material, gizmos, settings);
 }
 
 fn generate_dimension_lists(settings: &Settings) ->  DimensionList{

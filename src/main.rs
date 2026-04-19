@@ -22,7 +22,7 @@ use three_dim_viz::{
 };
 
 mod two_dim_viz;
-use two_dim_viz::TwoDimViz;
+use two_dim_viz::{TwoDimViz,TwoDimMesh, TwoDimSceneConfig};
 
 use bevy_pointcloud::{
     render::PointCloudRenderMode, 
@@ -31,7 +31,6 @@ use bevy_pointcloud::{
     point_cloud_material::PointCloudMaterial,
 };
 
-use crate::{two_dim_viz::{TwoDimSceneConfig, TwoDimMesh}, ui::SettingsMenus};
 
 pub const UI_RENDER_LAYER: isize = 99;
 pub const THREE_DIM_RENDER_LAYER: isize = 10;
@@ -144,14 +143,11 @@ fn setup(
     ));
 
 
-    let settings = Settings {
-        ..Default::default()
-    };
+    let three_dim_settings = Settings::default();
 
-    commands.insert_resource(settings);
-    commands.insert_resource(SettingsMenus::new(settings));
+    commands.insert_resource(three_dim_settings);
 
-    spawn_3d_visualization(&mut gizmos, &mut commands, &mut meshes, &mut materials, &mut point_clouds, &mut point_cloud_materials, &settings);
+    spawn_3d_visualization(&mut gizmos, &mut commands, &mut meshes, &mut materials, &mut point_clouds, &mut point_cloud_materials, &three_dim_settings);
 
 }
 
@@ -219,7 +215,7 @@ fn update_visualization(
     three_dim_entities: Query<Entity, With<ThreeDimMesh>>,
     two_dim_entities: Query<Entity, With<TwoDimMesh>>,
     two_dim_scene_config:  ResMut<TwoDimSceneConfig>,
-    window: Single<&Window>
+    window: Single<&Window>,
 ) 
  {
 
