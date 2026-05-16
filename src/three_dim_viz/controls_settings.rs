@@ -9,7 +9,7 @@ pub struct ControlSettings{
 }
 
 impl Setting for ControlSettings {
-    fn heading(&self) -> &str{
+    fn heading() -> &'static str {
         "Controls"
     }
     fn ui(&mut self, ui: &mut Ui){

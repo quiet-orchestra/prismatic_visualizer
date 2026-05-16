@@ -7,25 +7,30 @@ use crate::ui::ui_traits::Setting;
 pub struct ColorChannelSettings(pub ColorChannel, pub ColorChannel, pub ColorChannel,);
 
 impl Setting for ColorChannelSettings {
-    fn heading(&self) -> &str{
-        "Perceptual Offset"
+    fn heading() -> &'static str {
+        "Color Channels"
     }
     fn ui(&mut self, ui: &mut Ui){
 
-        let width = ui.available_width();
+        let width = ui.available_width() / 10.;
 
         ui.horizontal(|ui| {
                     ui.label("Channel Settings");
         });
 
-        //Channel A
-        ui_channel( ui, "A", &mut self.0, width);
 
-        //Channel B
-        ui_channel( ui, "B", &mut self.1, width);
+        ui.horizontal(|ui| {
+            //Channel A
+            ui_channel( ui, "A", &mut self.0, width);
 
-        //Channel C
-        ui_channel( ui, "C", &mut self.2, width);
+            //Channel B
+            ui_channel( ui, "B", &mut self.1, width);
+
+            //Channel C
+            ui_channel( ui, "C", &mut self.2, width);
+        });
+
+
     }
 }
 

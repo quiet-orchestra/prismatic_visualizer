@@ -10,7 +10,7 @@ pub struct ScaleSettings{
 }
 
 impl Setting for ScaleSettings {
-    fn heading(&self) -> &str{
+    fn heading() -> &'static str {
         "Scale"
     }
     fn ui(&mut self, ui: &mut Ui){

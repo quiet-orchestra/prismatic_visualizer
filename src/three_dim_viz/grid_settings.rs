@@ -11,7 +11,7 @@ pub struct GridSettings{
 }
 
 impl Setting for GridSettings {
-    fn heading(&self) -> &str {
+    fn heading() -> &'static str {
         return "Grid Settings";
     }
 

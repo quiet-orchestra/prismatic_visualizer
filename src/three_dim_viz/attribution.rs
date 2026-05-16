@@ -9,7 +9,7 @@ pub struct Attribution{
 }
 
 impl Setting for Attribution {
-    fn heading(&self) -> &str{
+    fn heading() -> &'static str {
         "Attribution"
     }
     fn ui(&mut self, ui: &mut Ui){

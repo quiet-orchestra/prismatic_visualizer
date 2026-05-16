@@ -44,72 +44,160 @@ pub struct Settings{
 
     pub attribution: Attribution,
 
-    pub settings_menu: SettingsMenu,
+    pub active_setting: SettingsOption,
 
 }
 
+#[derive(PartialEq, Clone, Copy)]
+enum SettingsOption {
+    Grid,
+    Offset,
+    Channels,
+    Model,
+    Dim,
+
+    Gradient,
+    Picker,
+
+    Controls,
+    Attr,
+
+}
+
+
 impl Settings {
 
-    //Want to make this generic. I think I can if I pull out the settings_menu into its own struct, but I'm not sure about borrowing issues
-    // fn get_3D_settings(&mut self) -> Vec<&mut dyn Setting> {
-    //     vec![
-    //         &mut self.scale_settings,
-    //         &mut self.grid_settings,
-    //         &mut self.perceptual_offset_settings,
-    //         &mut self.color_channel_settings,
-    //         &mut self.color_model_settings,
-    //         &mut self.dimensionality_settings,
-    //         &mut self.controls_settings,
-    //         &mut self.attribution,
-    //     ]
-    // }
-
-    pub fn three_dim_ui(&mut self, ui: &mut Ui){
-        let mut settings_list: Vec<&mut dyn Setting> = //self.get_3D_settings();
+    fn three_dim_settings() -> Vec<SettingsOption> {
         vec![
-            &mut self.scale_settings,
-            &mut self.grid_settings,
-            &mut self.perceptual_offset_settings,
-            &mut self.color_channel_settings,
-            &mut self.color_model_settings,
-            &mut self.dimensionality_settings,
-            &mut self.controls_settings,
-            &mut self.attribution,
-        ];
+            SettingsOption::Grid,
+            SettingsOption::Dim,
+        ]
+    }
 
-        ui.horizontal(|ui| {
+    fn two_dim_settings() -> Vec<SettingsOption> {
+        vec![
+            SettingsOption::Gradient,
+            SettingsOption::Picker,
+        ]
+    }
+
+    fn shared_settings() -> Vec<SettingsOption> {
+        vec![
+            SettingsOption::Offset,
+            SettingsOption::Channels,
+            SettingsOption::Model,
+        ]
+    }
+
+    fn bottom_settings() -> Vec<SettingsOption> {
+        vec![
+            SettingsOption::Controls,
+            SettingsOption::Attr,
+        ]
+    }
+
+
+    pub fn display_mode_setting(&mut self, ui: &mut Ui){
+        ui.horizontal(|ui|{
+            ui.selectable_value(&mut self.viewport_state, ViewportState::ThreeDimOnly, "3D");
+            ui.selectable_value(&mut self.viewport_state, ViewportState::TwoDimOnly, "2D");
+            ui.selectable_value(&mut self.viewport_state, ViewportState::SplitDim, "Split");
+            ui.separator();
+                
+        });
+    }
+
+   
+
+    pub fn settings_ribbon_ui(&mut self, ui: &mut Ui){
+
+        let options: Vec<SettingsOption> = match self.viewport_state {
+            ViewportState::ThreeDimOnly => {
+                [
+                Settings::three_dim_settings(),
+                Settings::shared_settings(),
+                ].concat()
+            },
+            ViewportState::TwoDimOnly => {
+                [
+                Settings::shared_settings(),
+                Settings::two_dim_settings(),
+                ].concat()
+            },
+            ViewportState::SplitDim => {
+                [
+                Settings::three_dim_settings(),
+                Settings::shared_settings(),
+                Settings::two_dim_settings(),
+                ].concat()
+            },
+        };
+
+        // ui.horizontal(|ui| {
 
             // ui.label(self.settings_menu.heading);
 
-            let min_text = if self.settings_menu.minimized {"Ʌ"} else {"V"};
-            let is_minimized = self.settings_menu.minimized;
-            ui.selectable_value(&mut self.settings_menu.minimized, !is_minimized , min_text);
+            // let min_text = if self.settings_menu.minimized {"Ʌ"} else {"V"};
+            // let is_minimized = self.settings_menu.minimized;
+            // ui.selectable_value(&mut self.settings_menu.minimized, !is_minimized , min_text);
             
-            ui.separator();
+            // ui.separator();
 
-            if !self.settings_menu.minimized {
-                ui.horizontal_wrapped(|ui|{
-                    for (i, setting) in settings_list.iter().enumerate() {
-                        ui.selectable_value( &mut self.settings_menu.index,  i, setting.heading());
-                    }  
-                });
-
-            }
-
+            // if !self.settings_menu.minimized {
+        ui.horizontal_wrapped(|ui|{
+            for option in options {
+                ui.selectable_value( &mut self.active_setting, option, Settings::setting_heading(option));
+            }  
         });
 
-        ui.separator();
+            // }
 
-        if !self.settings_menu.minimized {
-            if let Some(setting) = settings_list.get_mut(self.settings_menu.index) {
-                setting.ui(ui);
-            }
-        }
-
-
-
+        // });
 
     }
+
+    pub fn display_bottom_settings(&mut self, ui: &mut Ui) {
+        let options = Settings::bottom_settings();
+
+        ui.horizontal_wrapped(|ui|{
+            for option in options {
+                ui.selectable_value( &mut self.active_setting, option, Settings::setting_heading(option));
+            }  
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui|{
+                global_theme_preference_buttons(ui);
+            });
+            
+        });
+    }
+
+    fn display_selected_setting(&mut self, ui: &mut Ui) {
+        match self.active_setting {
+            SettingsOption::Grid => self.grid_settings.ui(ui),
+            SettingsOption::Offset => self.perceptual_offset_settings.ui(ui),
+            SettingsOption::Channels => self.color_channel_settings.ui(ui),
+            SettingsOption::Model => self.color_model_settings.ui(ui),
+            SettingsOption::Dim => self.dimensionality_settings.ui(ui),
+            SettingsOption::Gradient => {},
+            SettingsOption::Picker => {},
+            SettingsOption::Controls => self.controls_settings.ui(ui),
+            SettingsOption::Attr => self.attribution.ui(ui),
+        }
+    }
+
+    fn setting_heading(option: SettingsOption) -> &'static str {
+        match option {
+            SettingsOption::Grid => GridSettings::heading(),
+            SettingsOption::Offset => PerceptualOffsetSettings::heading(),
+            SettingsOption::Channels => ColorChannelSettings::heading(),
+            SettingsOption::Model => ColorModelSettings::heading(),
+            SettingsOption::Dim => DimensionalitySettings::heading(),
+            SettingsOption::Gradient => "Gradient",
+            SettingsOption::Picker => "Picker",
+            SettingsOption::Controls => ControlSettings::heading(),
+            SettingsOption::Attr => Attribution::heading(),
+        }
+    }
+
 }
 
 impl Default for Settings{
@@ -134,7 +222,7 @@ impl Default for Settings{
 
             attribution: Attribution::default(), 
 
-            settings_menu: SettingsMenu::new("Three Dim Viz"),
+            active_setting: SettingsOption::Grid,
 
 
         }
@@ -152,35 +240,35 @@ pub fn ui(
 
 
     egui::TopBottomPanel::top("Settings")
-        .exact_height(height)
+        .max_height(height)
         .show(contexts.ctx_mut().unwrap(), | ui|{
-        egui::Sense::hover();
+            egui::Sense::hover();
 
-        ui.horizontal(|ui|{
-            ui.selectable_value(&mut settings.viewport_state, ViewportState::ThreeDimOnly, "3D");
-            ui.selectable_value(&mut settings.viewport_state, ViewportState::TwoDimOnly, "2D");
-            ui.selectable_value(&mut settings.viewport_state, ViewportState::SplitDim, "Split");
+            settings.display_mode_setting(ui);
             ui.separator();
-            global_theme_preference_buttons(ui);
-        });
-
-        egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
-        
-            match settings.viewport_state {
-                ViewportState::ThreeDimOnly => {
-                    settings.three_dim_ui(ui);
-                },
-                ViewportState::TwoDimOnly => {
-
-                },
-                ViewportState::SplitDim => {
-                    settings.three_dim_ui(ui);
-                },
-            }
+            settings.settings_ribbon_ui(ui);
 
         });
+
+        egui::TopBottomPanel::bottom("bottom")
+        .show(contexts.ctx_mut().unwrap(), | ui|{
+
+            settings.display_bottom_settings(ui);
+            
+        });
+
+        egui::CentralPanel::default()
+        .show(contexts.ctx_mut().unwrap(), | ui | {
+            egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
+            
+                settings.display_selected_setting(ui);
+
+            });
+        });
+
+
 
 
     
-    });
+
 }

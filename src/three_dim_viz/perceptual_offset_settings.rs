@@ -12,7 +12,7 @@ pub struct PerceptualOffsetSettings{
 }
 
 impl Setting for PerceptualOffsetSettings {
-    fn heading(&self) -> &str{
+    fn heading() -> &'static str {
         "Perceptual Offset"
     }
     fn ui(&mut self, ui: &mut Ui){

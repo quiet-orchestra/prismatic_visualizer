@@ -9,7 +9,7 @@ pub struct FooSettings{
 }
 
 impl Setting for FooSettings {
-    fn heading(&self) -> &str{
+    fn heading() -> &'static str {
         "Foo"
     }
     fn ui(&mut self, ui: &mut Ui){

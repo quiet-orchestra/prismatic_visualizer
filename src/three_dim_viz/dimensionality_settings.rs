@@ -15,7 +15,7 @@ pub struct DimensionalitySettings{
 }
 
 impl Setting for DimensionalitySettings {
-    fn heading(&self) -> &str{
+    fn heading() -> &'static str {
         "Shape"
     }
     fn ui(&mut self, ui: &mut Ui){

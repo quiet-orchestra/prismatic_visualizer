@@ -18,7 +18,7 @@ pub struct ColorModelSettings{
 }
 
 impl Setting for ColorModelSettings {
-    fn heading(&self) -> &str{
+    fn heading() -> &'static str {
         "Color Model"
     }
     fn ui(&mut self, ui: &mut Ui){
