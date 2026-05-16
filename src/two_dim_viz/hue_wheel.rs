@@ -1,8 +1,8 @@
 use bevy::{
-    prelude::*,
+    camera::visibility::RenderLayers, prelude::*
 };
 
-use crate::two_dim_viz::TwoDimMesh;
+use crate::{TWO_DIM_RENDER_LAYER, two_dim_viz::TwoDimMesh};
 
 use std::f32::consts::PI;
 use prismatic_color::{Color as P_Color, constants as Color_Names};
@@ -111,7 +111,9 @@ pub fn spawn(
                 MeshMaterial2d(materials.add(color.to_linear_rgb().to_bevy_color())),
                 Transform::from_xyz(0.0, 0.0, 0.0 - stage as f32)
                     .with_rotation(Quat::from_rotation_z(rotation_angle)),
-            )).insert(TwoDimMesh{});
+                TwoDimMesh,
+                RenderLayers::layer(TWO_DIM_RENDER_LAYER as usize),
+            ));
         }
     }
 }

@@ -1,7 +1,7 @@
 //Quiet Orchestra
 //Prismatic Color Visualizer
 
-use bevy::{camera::Viewport, prelude::*, render::view::NoIndirectDrawing};
+use bevy::{camera::{Viewport, visibility::RenderLayers}, prelude::*, render::view::NoIndirectDrawing};
 use bevy_egui::{
     EguiGlobalSettings, EguiPlugin, EguiPrimaryContextPass, PrimaryEguiContext
 };
@@ -123,6 +123,7 @@ fn setup(
         Transform::from_xyz(SCALE*2., SCALE*2., SCALE*2.)
         .looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
         NoIndirectDrawing,
+        RenderLayers::layer(THREE_DIM_RENDER_LAYER as usize),
         Msaa::Off,
         PointCloudRenderMode {
             use_edl: false,
@@ -145,6 +146,7 @@ fn setup(
             order: TWO_DIM_RENDER_LAYER,
             ..default()
         },
+        RenderLayers::layer(TWO_DIM_RENDER_LAYER as usize),
         Msaa::Off,
         TwoDimCamera,
     ));
@@ -277,6 +279,7 @@ fn update_gizmo_config(
         let (config, _handle) = config_store.config_mut::<bevy::prelude::DefaultGizmoConfigGroup>();
         config.line.width = settings.dimensionality_settings.line_width * 5. ;
         config.line.joints = GizmoLineJoint::Miter;
+        config.render_layers = RenderLayers::layer(THREE_DIM_RENDER_LAYER as usize);
 
     }
 }

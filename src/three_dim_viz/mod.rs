@@ -9,10 +9,10 @@ use bevy_pointcloud::{
 };
 
 use bevy::{
-    asset::RenderAssetUsages, mesh::Indices, prelude::*, render::render_resource::PrimitiveTopology
+    asset::RenderAssetUsages, camera::visibility::RenderLayers, mesh::Indices, prelude::*, render::render_resource::PrimitiveTopology
 };
 
-use crate::ui::*;
+use crate::{THREE_DIM_RENDER_LAYER, ui::*};
 
 mod scale_settings;
 pub use scale_settings::ScaleSettings;
@@ -163,6 +163,7 @@ impl DimensionList {
                         PointCloud3d(point_cloud),
                         PointCloudMaterial3d(my_material),
                         ThreeDimMesh,
+                        RenderLayers::layer(THREE_DIM_RENDER_LAYER as usize),
                     )); 
              },
              DimensionList::Edge(edge_list) => {
@@ -257,6 +258,7 @@ impl DimensionList {
                     Mesh3d( meshes.add(mesh)),
                     MeshMaterial3d(material),
                     ThreeDimMesh,
+                    RenderLayers::layer(THREE_DIM_RENDER_LAYER as usize),
                 ));
             },
             DimensionList::Volume(face_list) => {
@@ -335,6 +337,7 @@ impl DimensionList {
                     Mesh3d( meshes.add(mesh)),
                     MeshMaterial3d(material),
                     ThreeDimMesh,
+                    RenderLayers::layer(THREE_DIM_RENDER_LAYER as usize),
                 ));
             },
         }
@@ -529,7 +532,7 @@ fn transform_coordinates(vertex: (f32,f32,f32), settings: &Settings) -> (f32,f32
 
 }
 
-pub const SCALE: f32 = 5.0;
+pub const SCALE: f32 = 10.0;
 
 trait BevyColorConvert {
     fn to_bevy_color(&self) -> Color;

@@ -1,10 +1,10 @@
 use bevy::{
-    prelude::*,
+    camera::visibility::RenderLayers, prelude::*
 };
 
 use prismatic_color::{Color as P_Color, constants as Color_Names};
 
-use crate::{two_dim_viz::TwoDimMesh, ui::Setting};
+use crate::{TWO_DIM_RENDER_LAYER, two_dim_viz::TwoDimMesh, ui::Setting};
 
 trait BevyColorConvert {
     fn to_bevy_color(&self) -> Color;
@@ -126,7 +126,9 @@ fn draw_hue_tile(
         commands.spawn((
             triangle_mesh,
             MeshMaterial2d(materials.add(color.to_linear_rgb().to_bevy_color())),
-        )).insert(TwoDimMesh{});
+            TwoDimMesh,
+            RenderLayers::layer(TWO_DIM_RENDER_LAYER as usize),
+        ));
     }
 
 }

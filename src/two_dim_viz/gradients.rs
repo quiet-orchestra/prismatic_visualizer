@@ -1,12 +1,10 @@
 use bevy::{
-    prelude::*, 
-    render::render_resource::{Extent3d, TextureDimension, TextureFormat},
-    asset::RenderAssetUsages,
+    asset::RenderAssetUsages, camera::visibility::RenderLayers, prelude::*, render::render_resource::{Extent3d, TextureDimension, TextureFormat}
 };
 
 use prismatic_color::{linear_gradient, Color as P_Color, constants as Color_Names};
 
-use crate::two_dim_viz::TwoDimMesh;
+use crate::{TWO_DIM_RENDER_LAYER, two_dim_viz::TwoDimMesh};
 
 
 pub fn spawn(
@@ -38,7 +36,9 @@ pub fn spawn(
                 ..Default::default()
             })),
             Transform::from_xyz(0.0, top - scaled_height * 1.1 * i as f32, 0.0 ),
-        )).insert(TwoDimMesh{});
+            TwoDimMesh,
+            RenderLayers::layer(TWO_DIM_RENDER_LAYER as usize),
+        ));
     }
 
 }
