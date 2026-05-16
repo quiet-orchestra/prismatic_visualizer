@@ -1,7 +1,7 @@
 use bevy::{ecs::component::Component, reflect::Reflect};
 use bevy_egui::egui::{DragValue, Ui};
 use egui_double_slider::DoubleSlider;
-use crate::ui::ui_traits::Setting;
+use crate::ui::Setting;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ColorChannelSettings(pub ColorChannel, pub ColorChannel, pub ColorChannel,);

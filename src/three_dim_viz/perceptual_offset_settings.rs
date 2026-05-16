@@ -1,5 +1,5 @@
 use bevy_egui::egui::{Ui, Slider};
-use crate::ui::ui_traits::Setting;
+use crate::ui::Setting;
 
 #[derive(Debug, Clone, Copy)]
 pub struct PerceptualOffsetSettings{

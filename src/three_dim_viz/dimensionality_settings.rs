@@ -1,6 +1,6 @@
 use bevy_egui::egui::{Slider, Ui};
 
-use crate::{three_dim_viz::{Dimensionality, SlicingMethod}, ui::ui_traits::Setting};
+use crate::{three_dim_viz::{Dimensionality, SlicingMethod}, ui::Setting};
 
 
 #[derive(Debug, Clone, Copy)]

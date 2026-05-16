@@ -8,8 +8,6 @@ use bevy_egui::{
     }
 };
 
-pub(crate) mod ui_traits;
-
 use crate::{
     UiCamera, ViewportState, three_dim_viz::{
         Attribution,
@@ -20,8 +18,13 @@ use crate::{
         GridSettings,
         PerceptualOffsetSettings,
         ScaleSettings,
-    }, ui::ui_traits::{Setting, SettingsMenu}
+    }
 };
+
+pub trait Setting: Send + Sync + 'static {
+    fn heading() -> &'static str;
+    fn ui(&mut self, ui: &mut Ui);
+}
 
 #[derive(Resource, Clone, Copy)]
 pub struct Settings{

@@ -1,6 +1,6 @@
 use bevy_egui::egui::{ComboBox, Ui};
 use prismatic_color::{ColorModel, ColorSpace,};
-use crate::{three_dim_viz::{RotationChirality, ColorModelCategory}, ui:: ui_traits::Setting};
+use crate::{three_dim_viz::{RotationChirality, ColorModelCategory}, ui::Setting};
 
 
 #[derive(Debug, Clone, Copy)]
