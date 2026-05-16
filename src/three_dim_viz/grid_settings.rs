@@ -16,13 +16,19 @@ impl Setting for GridSettings {
     }
 
     fn ui(&mut self, ui: &mut Ui) {
-        ui.horizontal( |ui| {
-            ui.selectable_value(&mut self.grid, GridCategory::None, "None");
-            ui.selectable_value(&mut self.grid, GridCategory::TwoDGrids, "2D Grids");
+        ui.horizontal_wrapped( |ui| {
+            let current_grid_selected = self.grid.clone();
+            ui.selectable_value(&mut self.grid,  if current_grid_selected != GridCategory::TwoDGrids {GridCategory::TwoDGrids} else {GridCategory::None}, "2D Grids");
             // ui.selectable_value(&mut self.grid, GridCategory::ThreeDGrid, "3D Grid");
+
+            if self.grid != GridCategory::None {
+                ui.separator();
+                ui.add(Slider::new( &mut self.grid_scale ,0.0..=2.0).text("Scale"));
+                ui.add(Slider::new( &mut self.grid_divs ,1..=25).text("Divisions"));
+            }
+
         });
-        ui.add(Slider::new( &mut self.grid_scale ,0.0..=2.0).text("Scale"));
-        ui.add(Slider::new( &mut self.grid_divs ,1..=25).text("Divisions"));
+
     }
 }
 

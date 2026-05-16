@@ -1,5 +1,3 @@
-use std::ops::IndexMut;
-
 use bevy::{prelude::*};
 use bevy_egui::{
     EguiContexts,
@@ -47,7 +45,7 @@ pub struct Settings{
 
     pub attribution: Attribution,
 
-    pub active_setting: SettingsOption,
+    active_setting: SettingsOption,
 
 }
 
@@ -99,6 +97,12 @@ impl Settings {
         ]
     }
 
+    fn select_available_option(&mut self, options: Vec<SettingsOption>) {
+        if ! options.contains(&self.active_setting) {
+            self.active_setting = options[0].clone();
+        }
+    }
+
 
     pub fn display_mode_setting(&mut self, ui: &mut Ui){
         ui.horizontal(|ui|{
@@ -136,6 +140,8 @@ impl Settings {
             },
         };
 
+        self.select_available_option([options.clone(), Settings::bottom_settings()].concat());
+
         // ui.horizontal(|ui| {
 
             // ui.label(self.settings_menu.heading);
@@ -161,15 +167,15 @@ impl Settings {
 
     pub fn display_bottom_settings(&mut self, ui: &mut Ui) {
         let options = Settings::bottom_settings();
-
-        ui.horizontal_wrapped(|ui|{
-            for option in options {
-                ui.selectable_value( &mut self.active_setting, option, Settings::setting_heading(option));
-            }  
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui|{
+        
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui|{
+            ui.horizontal_wrapped(|ui|{
                 global_theme_preference_buttons(ui);
-            });
-            
+                ui.separator();
+                for option in options {
+                    ui.selectable_value( &mut self.active_setting, option, Settings::setting_heading(option));
+                }              
+            });            
         });
     }
 

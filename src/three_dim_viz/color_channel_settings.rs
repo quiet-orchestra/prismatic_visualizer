@@ -12,14 +12,9 @@ impl Setting for ColorChannelSettings {
     }
     fn ui(&mut self, ui: &mut Ui){
 
-        let width = ui.available_width() / 10.;
+        let width = ui.available_width() / 5.;
 
-        ui.horizontal(|ui| {
-                    ui.label("Channel Settings");
-        });
-
-
-        ui.horizontal(|ui| {
+        ui.horizontal_wrapped(|ui| {
             //Channel A
             ui_channel( ui, "A", &mut self.0, width);
 
@@ -95,7 +90,9 @@ pub enum StepType {
 }
 
 fn ui_channel(ui: &mut Ui, label: &str, channel: &mut ColorChannel, width: f32) {
-    // Steps
+    
+    ui.vertical(|ui| {
+// Steps
     ui.horizontal(|ui| {
         ui.label(label);
         ui.add(
@@ -131,4 +128,6 @@ fn ui_channel(ui: &mut Ui, label: &str, channel: &mut ColorChannel, width: f32) 
 
     channel.start = start;
     channel.end = end;
+    });
+    
 }

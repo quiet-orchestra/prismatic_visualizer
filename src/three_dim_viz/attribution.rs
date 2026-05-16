@@ -13,18 +13,15 @@ impl Setting for Attribution {
     }
     fn ui(&mut self, ui: &mut Ui){
         ui.label(
-"
-Prismatic Color Visualizer
+"Prismatic Color Visualizer - MPL2
 
 Thanks to 
 Bevy - MIT & Apache-2.0 License
 Bevy Panorbit Camera - MIT & Apache-2.0 License
-Egui - MIT & Apache-2.0 License
+Egui|Eframe - MIT & Apache-2.0 License
 Bevy Egui - MIT License
 Egui Double Slider - Apache-2.0 License
-Bevy Pointcloud - MIT License
-
-This application is licensed under MPL2"
+Bevy Pointcloud - MIT License"
 );
     }
 }

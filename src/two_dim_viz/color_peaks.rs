@@ -4,7 +4,7 @@ use bevy::{
 
 use prismatic_color::{Color as P_Color, constants as Color_Names};
 
-use crate::two_dim_viz::TwoDimMesh;
+use crate::{two_dim_viz::TwoDimMesh, ui::Setting};
 
 trait BevyColorConvert {
     fn to_bevy_color(&self) -> Color;
@@ -21,8 +21,8 @@ pub fn generate_colors() -> Vec<Vec<P_Color>>{
     Color_Names::QUATERNARY_COLORS.iter()
     .skip(1) // Skip the zeroth row
     .map(|row| row.iter()
-                  .map(|&color| color) // Apply to_bevy_color to each element
-                  .collect()
+        .map(|&color| color) 
+        .collect()
     )
     .collect()
 }
@@ -153,4 +153,19 @@ fn find_closest_ratio(width: f32, height: f32) -> (usize, usize) {
         .unwrap();
 
     *closest_ratio
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct ColorPeaksSettings {
+
+}
+
+impl Setting for ColorPeaksSettings {
+    fn heading() -> &'static str {
+        "Color Peaks"
+    }
+
+    fn ui(&mut self, ui: &mut bevy_egui::egui::Ui) {
+        
+    }
 }
